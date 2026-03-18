@@ -123,12 +123,30 @@ def load_data():
 st.title("💊 확증임상 순응률 대시보드")
 st.caption(f"기준일: {date.today()}  |  5분마다 자동 갱신")
 
-with st.spinner("데이터 불러오는 중..."):
-    try:
-        df = load_data()
-    except Exception as e:
-        st.error(f"DB 연결 실패: {e}")
-        st.stop()
+status = st.empty()
+
+status.info("1/4 DTx DB 연결 중...")
+try:
+    get_dtx_conn()
+except Exception as e:
+    st.error(f"DTx DB 연결 실패: {e}")
+    st.stop()
+
+status.info("2/4 Sham DB 연결 중...")
+try:
+    get_sham_conn()
+except Exception as e:
+    st.error(f"Sham DB 연결 실패: {e}")
+    st.stop()
+
+status.info("3/4 데이터 쿼리 중...")
+try:
+    df = load_data()
+except Exception as e:
+    st.error(f"쿼리 실패: {e}")
+    st.stop()
+
+status.empty()
 
 # 요약 지표
 total = len(df)
