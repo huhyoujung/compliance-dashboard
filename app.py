@@ -2,34 +2,115 @@ import streamlit as st
 import psycopg2
 import pandas as pd
 from datetime import date
+import paramiko
+import threading
+import socket
+import time
 
 st.set_page_config(page_title="순응률 대시보드", page_icon="💊", layout="wide")
 
-# --- DB 연결 (secrets.toml or Streamlit Cloud secrets) ---
-DTX_HOST = st.secrets["dtx"]["host"]
-DTX_USER = st.secrets["dtx"]["user"]
-DTX_PASS = st.secrets["dtx"]["password"]
-DTX_DB   = st.secrets["dtx"]["dbname"]
+# --- SSH 터널 포워딩 헬퍼 ---
+class _ForwardServer(threading.Thread):
+    """로컬 포트 → SSH 터널 → 원격 호스트:포트 포워딩"""
+    def __init__(self, ssh_client, remote_host, remote_port, local_port):
+        super().__init__(daemon=True)
+        self.ssh = ssh_client
+        self.remote_host = remote_host
+        self.remote_port = remote_port
+        self.local_port = local_port
+        self._server = None
 
-SHAM_HOST = st.secrets["sham"]["host"]
-SHAM_USER = st.secrets["sham"]["user"]
-SHAM_PASS = st.secrets["sham"]["password"]
-SHAM_DB   = st.secrets["sham"]["dbname"]
+    def run(self):
+        self._server = socket.socket()
+        self._server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._server.bind(("127.0.0.1", self.local_port))
+        self._server.listen(5)
+        while True:
+            try:
+                conn, _ = self._server.accept()
+            except Exception:
+                break
+            chan = self.ssh.get_transport().open_channel(
+                "direct-tcpip",
+                (self.remote_host, self.remote_port),
+                ("127.0.0.1", self.local_port),
+            )
+            t = threading.Thread(target=self._pipe, args=(conn, chan), daemon=True)
+            t.start()
+
+    @staticmethod
+    def _pipe(sock, chan):
+        import select
+        while True:
+            r, _, _ = select.select([sock, chan], [], [], 1)
+            if sock in r:
+                data = sock.recv(1024)
+                if not data:
+                    break
+                chan.send(data)
+            if chan in r:
+                data = chan.recv(1024)
+                if not data:
+                    break
+                sock.send(data)
+        sock.close()
+        chan.close()
+
+
+def _find_free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
 
 @st.cache_resource
-def get_dtx_conn():
-    return psycopg2.connect(
-        host=DTX_HOST, port=5432,
-        user=DTX_USER, password=DTX_PASS, dbname=DTX_DB,
-        connect_timeout=10
+def _open_ssh_tunnel(remote_host, remote_port, local_port):
+    key_str = st.secrets["bastion"]["ssh_key"]
+    import io
+    pkey = paramiko.Ed25519Key.from_private_key(io.StringIO(key_str))
+
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(
+        hostname=st.secrets["bastion"]["host"],
+        username=st.secrets["bastion"]["user"],
+        pkey=pkey,
+        timeout=10,
     )
+
+    fwd = _ForwardServer(client, remote_host, remote_port, local_port)
+    fwd.start()
+    time.sleep(0.5)  # 포워더 준비 대기
+    return local_port
+
+
+# --- DB 연결 ---
+@st.cache_resource
+def get_dtx_conn():
+    local_port = _find_free_port()
+    _open_ssh_tunnel(
+        st.secrets["dtx"]["host"],
+        5432,
+        local_port,
+    )
+    return psycopg2.connect(
+        host="127.0.0.1", port=local_port,
+        user=st.secrets["dtx"]["user"],
+        password=st.secrets["dtx"]["password"],
+        dbname=st.secrets["dtx"]["dbname"],
+        connect_timeout=15,
+    )
+
 
 @st.cache_resource
 def get_sham_conn():
+    # Supabase는 외부 접근 가능 — 직접 연결
     return psycopg2.connect(
-        host=SHAM_HOST, port=5432,
-        user=SHAM_USER, password=SHAM_PASS, dbname=SHAM_DB,
-        connect_timeout=10
+        host=st.secrets["sham"]["host"], port=5432,
+        user=st.secrets["sham"]["user"],
+        password=st.secrets["sham"]["password"],
+        dbname=st.secrets["sham"]["dbname"],
+        connect_timeout=15,
     )
 
 # --- 데이터 로드 ---
