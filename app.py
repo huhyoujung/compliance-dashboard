@@ -20,14 +20,16 @@ SHAM_DB   = st.secrets["sham"]["dbname"]
 def get_dtx_conn():
     return psycopg2.connect(
         host=DTX_HOST, port=5432,
-        user=DTX_USER, password=DTX_PASS, dbname=DTX_DB
+        user=DTX_USER, password=DTX_PASS, dbname=DTX_DB,
+        connect_timeout=10
     )
 
 @st.cache_resource
 def get_sham_conn():
     return psycopg2.connect(
         host=SHAM_HOST, port=5432,
-        user=SHAM_USER, password=SHAM_PASS, dbname=SHAM_DB
+        user=SHAM_USER, password=SHAM_PASS, dbname=SHAM_DB,
+        connect_timeout=10
     )
 
 # --- 데이터 로드 ---
@@ -125,7 +127,7 @@ with st.spinner("데이터 불러오는 중..."):
     try:
         df = load_data()
     except Exception as e:
-        st.error("DB 연결에 실패했습니다. 관리자에게 문의하세요.")
+        st.error(f"DB 연결 실패: {e}")
         st.stop()
 
 # 요약 지표
