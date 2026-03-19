@@ -206,7 +206,13 @@
     <div id="tab-heatmap" style="display:none">
       <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
         <div class="flex items-center justify-between mb-4">
-          <div class="text-sm font-bold text-neutral-900">일별 사용 현황</div>
+          <div class="flex items-center gap-3">
+            <div class="text-sm font-bold text-neutral-900">일별 사용 현황</div>
+            <select id="heatmap-sort" onchange="renderHeatmap()" class="text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 text-neutral-600 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-300">
+              <option value="start-asc">가입일 오름차순 ↑</option>
+              <option value="start-desc">가입일 내림차순 ↓</option>
+            </select>
+          </div>
           <div class="flex gap-5 text-[13px] text-neutral-500">
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#34d399;box-shadow:0 1px 3px rgba(52,211,153,.3)"></div><span class="font-medium">사용</span></div>
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#fca5a5;box-shadow:0 1px 3px rgba(252,165,165,.3)"></div><span class="font-medium">미사용</span></div>
@@ -667,7 +673,12 @@ function positionTooltip(e, el) {
 // ── 히트맵 ───────────────────────────────────────────────────────────────
 function renderHeatmap() {
   const now = new Date();
-  const rows = [...filteredRows].sort((a, b) => a.subject_id.localeCompare(b.subject_id));
+  const sortVal = document.getElementById('heatmap-sort')?.value || 'start-asc';
+  const rows = [...filteredRows].sort((a, b) => {
+    const aTime = a.start_dt ? a.start_dt.getTime() : 0;
+    const bTime = b.start_dt ? b.start_dt.getTime() : 0;
+    return sortVal === 'start-desc' ? bTime - aTime : aTime - bTime;
+  });
   if (!rows.length) {
     Plotly.purge("heatmap-chart");
     return;
