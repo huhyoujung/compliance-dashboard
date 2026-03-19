@@ -584,9 +584,9 @@ function renderCards() {
 
 // ── 테이블 ───────────────────────────────────────────────────────────────
 function rowBgColor(yellowCards) {
-  if (yellowCards >= 3) return "background:#fef2f2";  // 진한 빨강 배경
-  if (yellowCards === 2) return "background:#fff1f2"; // 중간 빨강 배경
-  if (yellowCards === 1) return "background:#fff7ed"; // 연한 주황 배경
+  if (yellowCards >= 3) return "background:rgba(244,114,182,0.15)";  // 진한 핑크 배경
+  if (yellowCards === 2) return "background:rgba(244,114,182,0.10)"; // 중간 핑크 배경
+  if (yellowCards === 1) return "background:rgba(244,114,182,0.06)"; // 연한 핑크 배경
   return "";
 }
 
@@ -618,7 +618,7 @@ function renderTable() {
     const endedBadge = r.is_ended ? '<span class="text-[10px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-500 ml-1.5 font-medium">종료</span>' : "";
     const bg = rowBgColor(r.yellow_cards);
     const ycDisplay = r.yellow_cards > 0
-      ? `<span style="color:#dc2626;font-weight:700">${r.yellow_cards}</span>`
+      ? `<span style="color:#f472b6;font-weight:700">${r.yellow_cards}</span>`
       : `<span style="color:#a3a3a3">0</span>`;
     return `<tr style="${bg}" data-uid="${r.user_id}">
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.subject_id}</td>
@@ -678,7 +678,7 @@ function buildMiniHeatmapHTML(r) {
   }
   const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span></div>`;
   // 옐로카드 표시
-  const ycInfo = r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#dc2626;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
+  const ycInfo = r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#f472b6;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
   return header + meta + `<div class="mh-grid">${cells}</div>` + legend + ycInfo;
 }
 
@@ -882,7 +882,7 @@ function renderHospitalChart() {
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.total}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.active}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.ended}명</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.noUse > 0 ? '#dc2626' : '#a3a3a3'}">${s.noUse}명</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-semibold" style="color:${noUseColor}">${s.noUseRate.toFixed(1)}%</td>
-        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.yellowCards > 0 ? '#dc2626' : '#a3a3a3'}">${s.yellowCards}</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.yellowCards > 0 ? '#f472b6' : '#a3a3a3'}">${s.yellowCards}</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.avgUsed.toFixed(1)}일</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-bold" style="color:${compColor}">${s.avg.toFixed(1)}%</td>
       </tr>`;
