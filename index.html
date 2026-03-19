@@ -636,7 +636,7 @@ function renderHeatmap() {
         rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
-        const sidStr = daySessions.map(s => s.startsWith("sham") ? "*****" + s.slice(5) : s).join(", ");
+        const sidStr = daySessions.map(s => s.length > 5 ? "*****" + s.slice(5) : "*****").join(", ");
         rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidStr}`);
       } else {
         rowVals.push(0);
