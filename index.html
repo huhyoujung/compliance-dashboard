@@ -489,10 +489,9 @@ function parseCsv(csvText) {
           }
         });
       }
-      const used_days = Object.keys(userSessions).length;
-
       const ref = (end_dt && end_dt < now) ? end_dt : now;
       const elapsed_days = start_dt ? calcElapsedDays(start_dt, ref) : 0;
+      const used_days = Math.min(Object.keys(userSessions).length, elapsed_days);
       const compVal = calcCompliance(used_days, elapsed_days);
 
       const is_ended = end_dt && end_dt < now;
