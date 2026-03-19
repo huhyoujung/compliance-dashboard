@@ -10,311 +10,224 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
+          colors: {
+            mint: { 400: '#34d399', 600: '#059669', 800: '#065f46' },
+          },
+        },
+      },
+    }
+  </script>
 
   <style>
-    :root {
-      --c-bg: #fafafa;
-      --c-surface: #ffffff;
-      --c-border: #e5e5e5;
-      --c-border-light: #f5f5f5;
-      --c-text: #171717;
-      --c-text-secondary: #525252;
-      --c-text-muted: #a3a3a3;
-      --c-primary: #171717;
-      --c-primary-hover: #000000;
-      --c-primary-light: #f5f5f5;
-      --c-primary-border: #d4d4d4;
-      --c-danger: #dc2626;
-      --c-danger-bg: #fef2f2;
-      --c-warning: #d97706;
-      --c-warning-bg: #fffbeb;
-      --c-success: #059669;
-      --c-success-bg: #ecfdf5;
-      --c-green: #34d399;
-      --c-red: #fca5a5;
-      --c-gray: #e5e5e5;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-      --shadow-md: 0 2px 8px rgba(0,0,0,.08);
-      --shadow-lg: 0 4px 24px rgba(0,0,0,.12);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-    }
+    /* ── Tailwind로 커버 불가한 커스텀 스타일 ── */
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--c-bg); color: var(--c-text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-
-    /* ── 레이아웃 ── */
-    .layout { display: flex; flex-direction: column; min-height: 100vh; }
-    .main { flex: 1; padding: 32px 36px; overflow-x: hidden; max-width: 1200px; margin: 0 auto; width: 100%; }
-    h1 { font-size: 24px; font-weight: 700; color: var(--c-text); letter-spacing: -.02em; margin-bottom: 4px; }
-    .caption { font-size: 13px; color: var(--c-text-muted); margin-bottom: 24px; }
-
-    /* ── 헤더 ── */
-    .top-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); position: sticky; top: 0; z-index: 50; }
-    .top-header-brand { font-size: 15px; font-weight: 700; color: var(--c-primary); }
-    .top-header-right { display: flex; align-items: center; gap: 12px; }
-    .header-links { display: flex; gap: 12px; }
-    .header-links a { color: var(--c-text-secondary); text-decoration: none; font-size: 12px; transition: color .15s; }
-    .header-links a:hover { color: var(--c-primary); }
-
-    /* ── 필터 바 ── */
-    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; padding: 12px 0; }
-    .filter-bar .filter-label { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
-    .filter-bar select { border: 1px solid var(--c-border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--c-surface); color: var(--c-text); cursor: pointer; }
-    .filter-bar select:focus { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
-    .filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border: 1px solid var(--c-border); border-radius: 20px; background: var(--c-surface); font-size: 12px; cursor: pointer; color: var(--c-text-secondary); transition: all .15s; font-weight: 500; user-select: none; }
-    .filter-chip:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
-    .filter-chip.active { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
-    .filter-chip input[type="checkbox"] { display: none; }
-    .filter-divider { width: 1px; height: 24px; background: var(--c-border); margin: 0 4px; }
-    .hint-wrap { position: relative; display: inline-flex; align-items: center; }
-    .hint-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--c-border); font-size: 10px; font-weight: 700; color: var(--c-text-muted); cursor: help; margin-left: 4px; flex-shrink: 0; transition: all .15s; }
-    .hint-icon:hover { background: var(--c-text); color: #fff; border-color: var(--c-text); }
-    .hint-bubble { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--c-text); color: #fff; font-size: 12px; font-weight: 400; padding: 8px 12px; border-radius: 8px; white-space: nowrap; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.15); line-height: 1.5; }
-    .hint-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--c-text); }
+    /* 힌트 툴팁 */
+    .hint-bubble { display: none; }
+    .hint-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #171717; }
     .hint-icon:hover + .hint-bubble { display: block; }
 
-    /* ── 푸터 ── */
-    .site-footer { padding: 16px 36px; background: var(--c-surface); border-top: 1px solid var(--c-border); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--c-text-muted); }
+    /* 필터 칩 */
+    .filter-chip input[type="checkbox"] { display: none; }
+    .filter-chip.active { background: #171717; color: #fff; border-color: #171717; font-weight: 600; }
 
-    /* ── 카드 ── */
-    .cards { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
-    .card {
-      background: var(--c-surface); border-radius: var(--radius-md); padding: 20px 24px;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--c-border);
-      flex: 1; min-width: 150px; transition: box-shadow .2s;
-    }
-    .card:hover { box-shadow: var(--shadow-md); }
-    .card-label { font-size: 12px; color: var(--c-text-muted); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em; }
-    .card-value { font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
-    .card-value.danger { color: var(--c-danger); }
-    .card-value.success { color: var(--c-success); }
+    /* 탭 버튼 활성 */
+    .tab-btn.active { color: #171717; background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
-    /* ── 버튼 ── */
-    button.refresh-btn {
-      padding: 7px 16px; border: 1px solid var(--c-border); border-radius: 6px;
-      background: var(--c-surface); color: var(--c-text-secondary); font-size: 12px; cursor: pointer; font-weight: 500;
-      transition: all .15s;
-    }
-    button.refresh-btn:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
-
-    /* ── 탭 ── */
-    .tabs { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; background: var(--c-border-light); padding: 4px; border-radius: var(--radius-sm); }
-    .tab-btn {
-      padding: 10px 18px; border: none; border-radius: 6px; font-size: 13px;
-      cursor: pointer; color: var(--c-text-secondary); background: transparent; font-weight: 500;
-      transition: all 0.15s ease;
-    }
-    .tab-btn:hover { color: var(--c-text); background: rgba(255,255,255,.6); }
-    .tab-btn.active { color: var(--c-text); background: var(--c-surface); font-weight: 600; box-shadow: var(--shadow-sm); }
-
-    /* ── 서브탭 ── */
-    .sub-tabs { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .sub-tab-group { display: flex; align-items: center; gap: 6px; }
-    .sub-tab-label { font-size: 12px; color: var(--c-text-muted); margin-right: 2px; font-weight: 500; }
-    .sub-tab-btn { padding: 5px 14px; border: 1px solid var(--c-border); border-radius: 20px; background: var(--c-surface); font-size: 12px; cursor: pointer; color: var(--c-text-secondary); transition: all .15s; font-weight: 500; }
-    .sub-tab-btn:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-text); }
-    .sub-tab-btn.active { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
-
-    /* ── 테이블 ── */
-    .table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--c-border); }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--c-surface); }
-    th { background: var(--c-border-light); padding: 12px 14px; text-align: left; font-weight: 600; color: var(--c-text-secondary); border-bottom: 1px solid var(--c-border); white-space: nowrap; cursor: pointer; user-select: none; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+    /* 테이블 */
     th:hover { background: #f0f0f0; }
-    td { padding: 11px 14px; border-bottom: 1px solid var(--c-border-light); white-space: nowrap; color: var(--c-text); }
     tr:last-child td { border-bottom: none; }
-    .badge-ended { font-size: 10px; background: var(--c-border); padding: 2px 8px; border-radius: 10px; color: var(--c-text-secondary); margin-left: 6px; font-weight: 500; }
-
-    /* ── 범례 ── */
-    .legend { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; color: var(--c-text-secondary); }
-    .legend-item { display: flex; align-items: center; gap: 6px; }
-    .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
-
-    /* ── 설명 박스 ── */
-    .tab-desc { background: var(--c-border-light); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--c-text-secondary); line-height: 1.6; border-left: 3px solid var(--c-text); }
-
-    /* ── 인사이트 ── */
-    .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .insight-card {
-      background: var(--c-surface); border-radius: var(--radius-md); padding: 18px 22px;
-      box-shadow: var(--shadow-sm); border: 1px solid var(--c-border);
-    }
-    .insight-card h3 { font-size: 14px; font-weight: 700; color: var(--c-text); margin-bottom: 10px; }
-    .insight-list { list-style: none; font-size: 13px; color: var(--c-text-secondary); }
-    .insight-list li { padding: 5px 0; border-bottom: 1px solid var(--c-border-light); display: flex; justify-content: space-between; }
-    .insight-list li:last-child { border-bottom: none; }
-    .insight-tag { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
-    .insight-tag.danger { background: var(--c-danger-bg); color: var(--c-danger); }
-    .insight-tag.warning { background: var(--c-warning-bg); color: var(--c-warning); }
-    .insight-tag.success { background: var(--c-success-bg); color: var(--c-success); }
-    .hospital-kpi-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--c-surface); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--c-border); margin-bottom: 20px; }
-    .hospital-kpi-table th { background: var(--c-border-light); padding: 12px 14px; text-align: center; font-weight: 600; color: var(--c-text-secondary); border-bottom: 1px solid var(--c-border); white-space: nowrap; font-size: 12px; }
-    .hospital-kpi-table td { padding: 11px 14px; border-bottom: 1px solid var(--c-border-light); text-align: center; white-space: nowrap; }
-    .hospital-kpi-table tr:last-child td { border-bottom: none; }
-    @media (max-width: 900px) { .insight-grid { grid-template-columns: 1fr; } }
-
-    /* ── 미니 히트맵 툴팁 ── */
-    #mini-heatmap {
-      display: none; position: fixed; z-index: 1000;
-      background: var(--c-surface); border-radius: var(--radius-md); padding: 16px 18px;
-      box-shadow: var(--shadow-lg); pointer-events: none;
-      max-width: 420px; border: 1px solid var(--c-border);
-    }
-    #mini-heatmap .mh-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: var(--c-text); }
-    #mini-heatmap .mh-meta { font-size: 11px; color: var(--c-text-muted); margin-bottom: 10px; }
-    #mini-heatmap .mh-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
-    }
-    #mini-heatmap .mh-cell {
-      width: 26px; height: 26px; border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 600; color: #fff;
-    }
-    #mini-heatmap .mh-cell.used { background: #34d399; color: #065f46; }
-    #mini-heatmap .mh-cell.unused { background: #fca5a5; color: #171717; }
-    #mini-heatmap .mh-cell.future { background: #f0f0f0; color: var(--c-text-muted); }
-    #mini-heatmap .mh-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: var(--c-text-muted); }
-    #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-    #mini-heatmap .mh-legend .lg-used::before { background: #34d399; }
-    #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
-    #mini-heatmap .mh-legend .lg-future::before { background: #f0f0f0; }
     tr[data-uid] { cursor: default; transition: background .1s; }
     tr[data-uid]:hover { background: #f5f5f5 !important; }
 
-    /* ── 스피너 ── */
+    /* 미니 히트맵 툴팁 */
+    #mini-heatmap {
+      display: none; position: fixed; z-index: 1000;
+      background: #fff; border-radius: 16px; padding: 20px 22px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06); pointer-events: none;
+      max-width: 440px; border: 1px solid #e5e5e5;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    #mini-heatmap .mh-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    #mini-heatmap .mh-title { font-size: 14px; font-weight: 700; color: #171717; letter-spacing: -0.01em; }
+    #mini-heatmap .mh-badge { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+    #mini-heatmap .mh-badge.good { background: #d1fae5; color: #065f46; }
+    #mini-heatmap .mh-badge.warn { background: #fef3c7; color: #92400e; }
+    #mini-heatmap .mh-badge.bad { background: #fee2e2; color: #991b1b; }
+    #mini-heatmap .mh-meta { font-size: 12px; color: #a3a3a3; margin-bottom: 14px; display: flex; gap: 12px; }
+    #mini-heatmap .mh-meta strong { color: #525252; font-weight: 600; }
+    #mini-heatmap .mh-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    #mini-heatmap .mh-cell { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; transition: transform .1s, box-shadow .1s; position: relative; }
+    #mini-heatmap .mh-cell.used { background: #34d399; color: #065f46; box-shadow: 0 1px 3px rgba(52,211,153,.3); }
+    #mini-heatmap .mh-cell.unused { background: #fca5a5; color: #7f1d1d; box-shadow: 0 1px 3px rgba(252,165,165,.3); }
+    #mini-heatmap .mh-cell.future { background: #f5f5f5; color: #d4d4d4; }
+    #mini-heatmap .mh-cell.today { box-shadow: 0 0 0 2px #171717; z-index: 1; }
+    #mini-heatmap .mh-divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
+    #mini-heatmap .mh-stats { display: flex; gap: 16px; font-size: 12px; color: #737373; }
+    #mini-heatmap .mh-stats .stat-val { font-weight: 700; font-size: 14px; color: #171717; }
+    #mini-heatmap .mh-legend { display: flex; gap: 14px; margin-top: 12px; font-size: 11px; color: #a3a3a3; }
+    #mini-heatmap .mh-legend span { display: flex; align-items: center; gap: 5px; }
+    #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 4px; }
+    #mini-heatmap .mh-legend .lg-used::before { background: #34d399; }
+    #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
+    #mini-heatmap .mh-legend .lg-future::before { background: #f5f5f5; border: 1px solid #e5e5e5; }
+
+    /* 스피너 */
     #spinner { display: none; position: fixed; inset: 0; background: rgba(248,250,252,.85); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999; }
     #spinner.show { display: flex; }
-    .spinner-content { text-align: center; }
-    .spinner-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c-text); margin: 0 4px; animation: bounce .6s ease-in-out infinite; }
+    @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .spinner-dot { animation: bounce .6s ease-in-out infinite; }
     .spinner-dot:nth-child(2) { animation-delay: .1s; }
     .spinner-dot:nth-child(3) { animation-delay: .2s; }
-    @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .spinner-text { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--c-text-secondary); }
-
-    /* ── 반응형 ── */
-    @media (max-width: 700px) {
-      .main { padding: 20px 16px; }
-      .top-header { padding: 12px 16px; }
-      .site-footer { padding: 12px 16px; flex-direction: column; gap: 8px; text-align: center; }
-      .filter-bar { gap: 8px; padding: 10px 12px; }
-    }
+    /* 로그인 화면 */
+    #login-screen { display: flex; }
+    #login-screen.hidden { display: none; }
+    #app-root.hidden { display: none; }
   </style>
 </head>
 <body>
 
-<div id="spinner"><div class="spinner-content"><div><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span></div><div class="spinner-text">데이터를 불러오는 중...</div></div></div>
+<!-- 로그인 화면 -->
+<div id="login-screen" class="flex items-center justify-center min-h-screen bg-neutral-50 font-sans antialiased">
+  <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 px-10 py-10 w-full max-w-sm text-center">
+    <div class="text-3xl mb-2">💊</div>
+    <h1 class="text-lg font-bold text-neutral-900 mb-1">사용률 대시보드</h1>
+    <p class="text-xs text-neutral-400 mb-7">접근하려면 비밀번호를 입력하세요</p>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <input id="pw-input" type="password" placeholder="비밀번호" autocomplete="off"
+        class="w-full px-4 py-3 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-neutral-50 focus:outline-none focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/5 mb-3 text-center tracking-widest" />
+      <div id="pw-error" class="text-xs text-red-500 mb-3 hidden">비밀번호가 올바르지 않습니다</div>
+      <button type="submit"
+        class="w-full py-3 bg-neutral-900 text-white rounded-lg text-sm font-semibold hover:bg-neutral-800 transition-colors">
+        로그인
+      </button>
+    </form>
+    <p class="text-[11px] text-neutral-300 mt-6">확증임상 프로젝트 내부용</p>
+  </div>
+</div>
 
-<div class="layout">
+<div id="spinner"><div class="text-center"><div><span class="spinner-dot inline-block w-2.5 h-2.5 rounded-full bg-neutral-900 mx-1"></span><span class="spinner-dot inline-block w-2.5 h-2.5 rounded-full bg-neutral-900 mx-1"></span><span class="spinner-dot inline-block w-2.5 h-2.5 rounded-full bg-neutral-900 mx-1"></span></div><div class="mt-3 text-sm font-semibold text-neutral-500">데이터를 불러오는 중...</div></div></div>
+
+<div id="app-root" class="flex flex-col min-h-screen font-sans bg-neutral-50 text-neutral-900 text-sm leading-relaxed antialiased hidden">
   <!-- 헤더 -->
-  <header class="top-header">
-    <div class="top-header-brand">💊 사용률 대시보드</div>
-    <div class="top-header-right">
-      <div class="header-links">
-        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer">📄 환자 데이터 시트 ↗</a>
-        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer">📄 세션 기록 시트 ↗</a>
+  <header class="flex items-center justify-between px-9 py-4 bg-white border-b border-neutral-200 sticky top-0 z-50">
+    <div class="text-[15px] font-bold text-neutral-900">💊 사용률 대시보드</div>
+    <div class="flex items-center gap-3">
+      <div class="flex gap-3">
+        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer" class="text-neutral-500 no-underline text-xs hover:text-neutral-900 transition-colors">📄 환자 데이터 시트 ↗</a>
+        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer" class="text-neutral-500 no-underline text-xs hover:text-neutral-900 transition-colors">📄 세션 기록 시트 ↗</a>
       </div>
-      <div class="caption" id="caption" style="margin-bottom:0">-</div>
-      <button class="refresh-btn" onclick="loadData(true)">↻ 새로고침</button>
+      <div class="text-[13px] text-neutral-400" id="caption">-</div>
+      <button class="px-4 py-1.5 border border-neutral-200 rounded-md bg-white text-neutral-500 text-xs font-medium cursor-pointer hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-all" onclick="loadData(true)">↻ 새로고침</button>
     </div>
   </header>
 
   <!-- 메인 -->
-  <main class="main">
+  <main class="flex-1 px-9 py-8 overflow-x-hidden max-w-[1200px] mx-auto w-full">
 
     <!-- 통합 필터 바 -->
-    <div class="filter-bar" id="filter-bar">
-      <span class="filter-label">기관</span>
-      <select id="hospital-filter" onchange="applyFilters()">
+    <div class="flex flex-wrap gap-2.5 items-center mb-4 py-3" id="filter-bar">
+      <span class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mr-1">기관</span>
+      <select id="hospital-filter" onchange="applyFilters()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
         <option value="all">전체 기관</option>
       </select>
-      <div class="filter-divider"></div>
-      <span class="filter-label">상태</span>
-      <select id="status-filter" onchange="applyFilters()">
+      <div class="w-px h-6 bg-neutral-200 mx-1"></div>
+      <span class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mr-1">상태</span>
+      <select id="status-filter" onchange="applyFilters()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
         <option value="all">전체</option>
         <option value="active">사용중</option>
         <option value="ended">만료됨</option>
       </select>
-      <div class="filter-divider"></div>
-      <label class="filter-chip" id="chip-yellow">
+      <div class="w-px h-6 bg-neutral-200 mx-1"></div>
+      <label class="filter-chip inline-flex items-center gap-1.5 px-3.5 py-1 border border-neutral-200 rounded-full bg-white text-xs cursor-pointer text-neutral-500 font-medium select-none hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-all" id="chip-yellow">
         <input type="checkbox" id="yellow-card-only" onchange="toggleChip('chip-yellow'); applyFilters()">
         옐로카드만
       </label>
-      <span class="hint-wrap">
-        <span class="hint-icon">?</span>
-        <span class="hint-bubble">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span>
+      <span class="hint-wrap relative inline-flex items-center">
+        <span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span>
+        <span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span>
       </span>
     </div>
 
     <!-- 요약 카드 -->
-    <div class="cards">
-      <div class="card">
-        <div class="card-label">전체 대상자</div>
-        <div class="card-value" id="card-total">-</div>
+    <div class="flex gap-4 mb-7 flex-wrap">
+      <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">전체 대상자</div>
+        <div class="text-3xl font-bold tracking-tight" id="card-total">-</div>
       </div>
-      <div class="card">
-        <div class="card-label">미사용자 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">처방 기간 동안 앱 세션이 0회인 환자</span></span></div>
-        <div class="card-value danger" id="card-nouse">-</div>
+      <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">미사용자 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">처방 기간 동안 앱 세션이 0회인 환자</span></span></div>
+        <div class="text-3xl font-bold tracking-tight text-red-600" id="card-nouse">-</div>
       </div>
-      <div class="card">
-        <div class="card-label">옐로카드 보유자 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span></span></div>
-        <div class="card-value danger" id="card-yellow">-</div>
+      <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">옐로카드 보유자 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span></span></div>
+        <div class="text-3xl font-bold tracking-tight text-red-600" id="card-yellow">-</div>
       </div>
-      <div class="card">
-        <div class="card-label">평균 사용률 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">사용일 / 경과일 × 100</span></span></div>
-        <div class="card-value success" id="card-avg">-</div>
+      <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">평균 사용률 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">사용일 / 경과일 × 100</span></span></div>
+        <div class="text-3xl font-bold tracking-tight text-emerald-600" id="card-avg">-</div>
       </div>
     </div>
 
     <!-- 탭 -->
-    <div class="tabs" id="main-tabs">
-      <button class="tab-btn active" onclick="switchTab('table', this)">환자 테이블</button>
-      <button class="tab-btn" onclick="switchTab('heatmap', this)">일별 히트맵</button>
-      <button class="tab-btn" onclick="switchTab('hospital', this)">기관별 요약</button>
+    <div class="flex gap-1 mb-6 flex-wrap bg-neutral-100 p-1 rounded-lg" id="main-tabs">
+      <button class="tab-btn px-4 py-2.5 border-none rounded-md text-[13px] cursor-pointer text-neutral-500 bg-transparent font-medium transition-all hover:text-neutral-900 hover:bg-white/60 active" onclick="switchTab('table', this)">환자 테이블</button>
+      <button class="tab-btn px-4 py-2.5 border-none rounded-md text-[13px] cursor-pointer text-neutral-500 bg-transparent font-medium transition-all hover:text-neutral-900 hover:bg-white/60" onclick="switchTab('heatmap', this)">일별 히트맵</button>
+      <button class="tab-btn px-4 py-2.5 border-none rounded-md text-[13px] cursor-pointer text-neutral-500 bg-transparent font-medium transition-all hover:text-neutral-900 hover:bg-white/60" onclick="switchTab('hospital', this)">기관별 요약</button>
     </div>
 
     <div id="tab-table">
-      <div class="table-wrap">
-        <table id="patient-table">
+      <div class="overflow-x-auto rounded-xl border border-neutral-200">
+        <table id="patient-table" class="w-full border-collapse text-[13px] bg-white">
           <thead>
             <tr>
-              <th onclick="sortTable('subject_id')">피험자번호 ↕</th>
-              <th onclick="sortTable('hospital')">소속기관 ↕</th>
-              <th onclick="sortTable('start_dt')">처방 시작일 ↕</th>
-              <th onclick="sortTable('end_dt')">처방 종료일 ↕</th>
-              <th onclick="sortTable('elapsed_days')">경과일 ↕</th>
-              <th onclick="sortTable('used_days')">사용일 ↕</th>
-              <th onclick="sortTable('compliance')">사용률(%) ↕</th>
-              <th onclick="sortTable('yellow_cards')">옐로카드 ↕</th>
+              <th onclick="sortTable('subject_id')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">피험자번호 ↕</th>
+              <th onclick="sortTable('hospital')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">소속기관 ↕</th>
+              <th onclick="sortTable('start_dt')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">처방 시작일 ↕</th>
+              <th onclick="sortTable('end_dt')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">처방 종료일 ↕</th>
+              <th onclick="sortTable('elapsed_days')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">경과일 ↕</th>
+              <th onclick="sortTable('used_days')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용일 ↕</th>
+              <th onclick="sortTable('compliance')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용률(%) ↕</th>
+              <th onclick="sortTable('yellow_cards')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">옐로카드 ↕</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
       </div>
-      <div class="caption" id="table-caption" style="margin-top:8px"></div>
+      <div class="text-[13px] text-neutral-400 mt-2" id="table-caption"></div>
     </div>
 
     <div id="tab-heatmap" style="display:none">
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>사용</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#fca5a5"></div>미사용</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f0f0f0"></div>미경과</div>
+      <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-sm font-bold text-neutral-900">일별 사용 현황</div>
+          <div class="flex gap-5 text-[13px] text-neutral-500">
+            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#34d399;box-shadow:0 1px 3px rgba(52,211,153,.3)"></div><span class="font-medium">사용</span></div>
+            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#fca5a5;box-shadow:0 1px 3px rgba(252,165,165,.3)"></div><span class="font-medium">미사용</span></div>
+            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#f5f5f5;border:1px solid #e5e5e5"></div><span class="font-medium">미경과</span></div>
+          </div>
+        </div>
+        <div id="heatmap-chart" class="rounded-lg overflow-hidden"></div>
       </div>
-      <div id="heatmap-chart"></div>
     </div>
 
     <div id="tab-hospital" style="display:none">
       <div id="hospital-insights"></div>
       <div id="hospital-kpi-wrap"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div id="hospital-chart"></div>
-        <div id="hospital-box-chart"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="hospital-chart" class="rounded-lg overflow-hidden"></div></div>
+        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="hospital-box-chart" class="rounded-lg overflow-hidden"></div></div>
       </div>
     </div>
   </main>
 
   <!-- 푸터 -->
-  <footer class="site-footer">
+  <footer class="px-9 py-4 bg-white border-t border-neutral-200 flex items-center justify-center text-xs text-neutral-400">
     <span>© 2025 사용률 대시보드</span>
   </footer>
 </div>
@@ -322,6 +235,46 @@
 <div id="mini-heatmap"></div>
 
 <script>
+// ── 로그인 ────────────────────────────────────────────────────────────────
+const PW_HASH = "c1339ea1fed031f2fe9b54741b94f777475f8f129d6ab369fb50faec813fd159";
+const SESSION_KEY = "dashboard_auth";
+
+async function sha256(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const pw = document.getElementById("pw-input").value;
+  const hash = await sha256(pw);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    showApp();
+  } else {
+    document.getElementById("pw-error").classList.remove("hidden");
+    document.getElementById("pw-input").value = "";
+    document.getElementById("pw-input").focus();
+  }
+  return false;
+}
+
+function showApp() {
+  document.getElementById("login-screen").classList.add("hidden");
+  document.getElementById("app-root").classList.remove("hidden");
+  loadData();
+}
+
+// 세션 유지: 탭 닫으면 로그아웃
+if (sessionStorage.getItem(SESSION_KEY) === "1") {
+  document.addEventListener("DOMContentLoaded", showApp);
+} else {
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("pw-input").focus();
+  });
+}
+
 // ── 상수 ──────────────────────────────────────────────────────────────────
 const SHEET_ID = "1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
@@ -622,20 +575,20 @@ function renderTable() {
   const tbody = document.getElementById("table-body");
   tbody.innerHTML = rows.map(r => {
     const comp = r.compliance !== null ? r.compliance.toFixed(1) + "%" : "N/A";
-    const endedBadge = r.is_ended ? '<span class="badge-ended">종료</span>' : "";
+    const endedBadge = r.is_ended ? '<span class="text-[10px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-500 ml-1.5 font-medium">종료</span>' : "";
     const bg = rowBgColor(r.yellow_cards);
     const ycDisplay = r.yellow_cards > 0
       ? `<span style="color:#dc2626;font-weight:700">${r.yellow_cards}</span>`
       : `<span style="color:#a3a3a3">0</span>`;
     return `<tr style="${bg}" data-uid="${r.user_id}">
-      <td>${r.subject_id}</td>
-      <td>${r.hospital}</td>
-      <td>${r.start_str}${endedBadge}</td>
-      <td>${r.end_str}</td>
-      <td>${r.elapsed_days}</td>
-      <td>${r.used_days}</td>
-      <td>${comp}</td>
-      <td style="text-align:center">${ycDisplay}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.subject_id}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.hospital}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.start_str}${endedBadge}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.end_str}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.elapsed_days}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.used_days}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${comp}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap text-center">${ycDisplay}</td>
     </tr>`;
   }).join("");
 
@@ -646,23 +599,31 @@ function renderTable() {
 // ── 미니 히트맵 (테이블 호버) ─────────────────────────────────────────────
 function buildMiniHeatmapHTML(r) {
   const sess = r.sessions || {};
-  let title = `<div class="mh-title">${r.subject_id} — ${r.hospital}</div>`;
-  let meta = `<div class="mh-meta">사용률 ${r.compliance !== null ? r.compliance.toFixed(1) + '%' : 'N/A'} · 경과 ${r.elapsed_days}일 · 사용 ${r.used_days}일</div>`;
+  const compVal = r.compliance !== null ? r.compliance.toFixed(1) : null;
+  const badgeClass = compVal === null ? 'warn' : compVal >= 80 ? 'good' : compVal >= 50 ? 'warn' : 'bad';
+  const badgeText = compVal !== null ? compVal + '%' : 'N/A';
+  let header = `<div class="mh-header"><div class="mh-title">${r.subject_id}</div><span class="mh-badge ${badgeClass}">${badgeText}</span></div>`;
+  let meta = `<div class="mh-meta"><span>${r.hospital}</span><span>경과 <strong>${r.elapsed_days}</strong>일</span><span>사용 <strong>${r.used_days}</strong>일</span></div>`;
   let cells = '';
+  // 오늘이 몇 일차인지 계산
+  const todayDayNum = r.start_dt ? Math.floor((new Date() - new Date(r.start_dt.getTime())) / 86400000) : -1;
   for (let d = 0; d < MAX_DAYS; d++) {
     const daySessions = sess[d] || [];
     const label = d + 1;
+    const isToday = d === todayDayNum ? ' today' : '';
     if (d >= r.elapsed_days) {
-      cells += `<div class="mh-cell future">${label}</div>`;
+      cells += `<div class="mh-cell future${isToday}">${label}</div>`;
     } else if (daySessions.length > 0) {
       const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
-      cells += `<div class="mh-cell used" title="${times}">${label}</div>`;
+      cells += `<div class="mh-cell used${isToday}" title="${times}">${label}</div>`;
     } else {
-      cells += `<div class="mh-cell unused">${label}</div>`;
+      cells += `<div class="mh-cell unused${isToday}">${label}</div>`;
     }
   }
   const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span></div>`;
-  return title + meta + `<div class="mh-grid">${cells}</div>` + legend;
+  // 옐로카드 표시
+  const ycInfo = r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#dc2626;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
+  return header + meta + `<div class="mh-grid">${cells}</div>` + legend + ycInfo;
 }
 
 let hoverAttached = false;
@@ -721,24 +682,24 @@ function renderHeatmap() {
     for (let d = 0; d < MAX_DAYS; d++) {
       const dayOffset = d * 86400000;
       const dayDt = r.start_dt ? new Date(r.start_dt.getTime() + dayOffset) : null;
-      const dateStr = dayDt ? dayDt.toLocaleDateString("ko-KR") : "?";
-      const label = d + 1;  // 표시용: 1일차~28일차
+      const dateStr = dayDt ? `${dayDt.getMonth()+1}/${dayDt.getDate()}` : "?";
+      const label = d + 1;
       const daySessions = sess[d] || [];
       const hasSession = daySessions.length > 0;
 
       if (d >= r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 미경과`);
+        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>⬜ 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
           const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
-          return `${masked} (${e.kstDate || ''} ${e.kstTime} KST)`;
+          return `${e.kstTime || ''} KST`;
         }).join(", ");
-        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidLines}`);
+        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>✅ 사용 — ${sidLines}`);
       } else {
         rowVals.push(0);
-        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 미사용`);
+        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>❌ 미사용`);
       }
     }
     matrix.push(rowVals);
@@ -750,10 +711,10 @@ function renderHeatmap() {
   const colorscale = [
     [0.00, "#fca5a5"], [0.33, "#fca5a5"],
     [0.34, "#34d399"], [0.66, "#34d399"],
-    [0.67, "#f0f0f0"], [1.00, "#f0f0f0"],
+    [0.67, "#f5f5f5"], [1.00, "#f5f5f5"],
   ];
 
-  const height = Math.max(300, rows.length * 36 + 100);
+  const height = Math.max(300, rows.length * 38 + 120);
 
   Plotly.newPlot("heatmap-chart", [{
     type: "heatmap",
@@ -765,14 +726,30 @@ function renderHeatmap() {
     showscale: false,
     text: hoverTexts,
     hovertemplate: "%{text}<extra></extra>",
-    xgap: 2, ygap: 2,
+    xgap: 3, ygap: 3,
   }], {
-    margin: {l: 100, r: 20, t: 40, b: 60},
+    margin: {l: 110, r: 24, t: 50, b: 60},
     height,
-    xaxis: { side: "top", title: "처방 일차" },
-    yaxis: { autorange: "reversed" },
-    plot_bgcolor: "white",
+    xaxis: {
+      side: "top",
+      title: { text: "처방 일차", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#737373" },
+      gridcolor: "#f5f5f5",
+      linecolor: "#e5e5e5",
+    },
+    yaxis: {
+      autorange: "reversed",
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#525252" },
+      gridcolor: "#f5f5f5",
+      linecolor: "#e5e5e5",
+    },
+    plot_bgcolor: "#fafafa",
     paper_bgcolor: "white",
+    hoverlabel: {
+      bgcolor: "#171717",
+      bordercolor: "#171717",
+      font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" },
+    },
   }, { responsive: true });
 }
 
@@ -822,23 +799,23 @@ function renderHospitalChart() {
 
   // ── KPI 테이블 ──
   const sortedByAvg = [...stats].sort((a,b) => a.avg - b.avg);
-  const kpiHtml = `<table class="hospital-kpi-table">
+  const kpiHtml = `<table class="w-full border-collapse text-[13px] bg-white rounded-xl overflow-hidden border border-neutral-200 mb-5">
     <thead><tr>
-      <th>기관</th><th>전체</th><th>사용중</th><th>만료</th>
-      <th>미사용자</th><th>미사용률</th><th>옐로카드</th>
-      <th>평균 사용일</th><th>평균 사용률</th>
+      <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">기관</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">전체</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">사용중</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">만료</th>
+      <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">미사용자</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">미사용률</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">옐로카드</th>
+      <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
       const compColor = s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#d97706" : "#dc2626";
       const noUseColor = s.noUseRate > 30 ? "#dc2626" : s.noUseRate > 15 ? "#d97706" : "#525252";
       return `<tr>
-        <td style="text-align:left;font-weight:600">${s.hospital}</td>
-        <td>${s.total}명</td><td>${s.active}명</td><td>${s.ended}명</td>
-        <td style="color:${s.noUse > 0 ? '#dc2626' : '#a3a3a3'}">${s.noUse}명</td>
-        <td style="color:${noUseColor};font-weight:600">${s.noUseRate.toFixed(1)}%</td>
-        <td style="color:${s.yellowCards > 0 ? '#dc2626' : '#a3a3a3'}">${s.yellowCards}</td>
-        <td>${s.avgUsed.toFixed(1)}일</td>
-        <td style="color:${compColor};font-weight:700">${s.avg.toFixed(1)}%</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-left font-semibold whitespace-nowrap">${s.hospital}</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.total}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.active}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.ended}명</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.noUse > 0 ? '#dc2626' : '#a3a3a3'}">${s.noUse}명</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-semibold" style="color:${noUseColor}">${s.noUseRate.toFixed(1)}%</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.yellowCards > 0 ? '#dc2626' : '#a3a3a3'}">${s.yellowCards}</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.avgUsed.toFixed(1)}일</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-bold" style="color:${compColor}">${s.avg.toFixed(1)}%</td>
       </tr>`;
     }).join("")}</tbody>
   </table>`;
@@ -913,10 +890,11 @@ function renderHospitalChart() {
     });
   }
 
-  const insightHtml = insights.length ? `<div class="insight-grid">${insights.map(i =>
-    `<div class="insight-card">
-      <h3>${i.title} <span class="insight-tag ${i.type}">${i.type === "danger" ? "위험" : i.type === "warning" ? "주의" : "양호"}</span></h3>
-      <div style="font-size:13px;color:var(--c-text-secondary);line-height:1.6">${i.text}</div>
+  const tagColors = { danger: 'bg-red-50 text-red-600', warning: 'bg-amber-50 text-amber-600', success: 'bg-emerald-50 text-emerald-600' };
+  const insightHtml = insights.length ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">${insights.map(i =>
+    `<div class="bg-white rounded-xl px-5 py-4 shadow-sm border border-neutral-200">
+      <h3 class="text-sm font-bold text-neutral-900 mb-2.5">${i.title} <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${tagColors[i.type]}">${i.type === "danger" ? "위험" : i.type === "warning" ? "주의" : "양호"}</span></h3>
+      <div class="text-[13px] text-neutral-500 leading-relaxed">${i.text}</div>
     </div>`
   ).join("")}</div>` : "";
   document.getElementById("hospital-insights").innerHTML = insightHtml;
@@ -933,16 +911,38 @@ function renderHospitalChart() {
     orientation: "h",
     x: xValues,
     y: yLabels,
-    marker: { color: colors },
+    marker: {
+      color: colors,
+      line: { width: 0 },
+    },
     text: textVals,
     textposition: "outside",
+    textfont: { family: "Inter, system-ui, sans-serif", size: 12, color: "#525252" },
+    hovertemplate: "<b>%{y}</b><br>사용률: %{x}%<extra></extra>",
   }], {
-    title: { text: "평균 사용률", font: { size: 14 } },
-    xaxis: { title: "사용률(%)", range: [0, 115] },
-    margin: { l: 200, r: 60, t: 40, b: 50 },
-    height: Math.max(300, entries.length * 50),
+    title: { text: "평균 사용률", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
+    xaxis: {
+      title: { text: "사용률(%)", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      range: [0, 115],
+      gridcolor: "#f5f5f5",
+      linecolor: "#e5e5e5",
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" },
+      zeroline: false,
+    },
+    yaxis: {
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 12, color: "#525252" },
+      linecolor: "#e5e5e5",
+    },
+    margin: { l: 200, r: 60, t: 50, b: 50 },
+    height: Math.max(300, entries.length * 55),
     paper_bgcolor: "white",
-    plot_bgcolor: "white",
+    plot_bgcolor: "#fafafa",
+    hoverlabel: {
+      bgcolor: "#171717",
+      bordercolor: "#171717",
+      font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" },
+    },
+    bargap: 0.35,
   }, { responsive: true });
 
   // ── 기관별 박스플롯 ──
@@ -950,20 +950,43 @@ function renderHospitalChart() {
     type: "box",
     y: s.compValues,
     name: s.hospital.replace(/대학교/g, "대"),
-    marker: { color: s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#525252" : "#dc2626" },
+    marker: {
+      color: s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#525252" : "#dc2626",
+      size: 5,
+      opacity: 0.7,
+    },
+    line: { width: 1.5 },
+    fillcolor: s.avg >= 80 ? "rgba(5,150,105,0.08)" : s.avg >= 50 ? "rgba(82,82,82,0.08)" : "rgba(220,38,38,0.08)",
     boxpoints: "all",
     jitter: 0.4,
     pointpos: 0,
+    hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
   }));
 
   Plotly.newPlot("hospital-box-chart", boxTraces, {
-    title: { text: "사용률 분포", font: { size: 14 } },
-    yaxis: { title: "사용률(%)", range: [-5, 110] },
-    margin: { l: 50, r: 20, t: 40, b: 80 },
-    height: Math.max(300, entries.length * 50),
+    title: { text: "사용률 분포", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
+    yaxis: {
+      title: { text: "사용률(%)", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      range: [-5, 110],
+      gridcolor: "#f5f5f5",
+      linecolor: "#e5e5e5",
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" },
+      zeroline: false,
+    },
+    xaxis: {
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 10, color: "#525252" },
+      linecolor: "#e5e5e5",
+    },
+    margin: { l: 55, r: 20, t: 50, b: 90 },
+    height: Math.max(320, entries.length * 55),
     showlegend: false,
     paper_bgcolor: "white",
-    plot_bgcolor: "white",
+    plot_bgcolor: "#fafafa",
+    hoverlabel: {
+      bgcolor: "#171717",
+      bordercolor: "#171717",
+      font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" },
+    },
   }, { responsive: true });
 }
 
@@ -983,8 +1006,7 @@ function switchTab(name, btn) {
   setTimeout(() => { Plotly.Plots.resize(document.getElementById(`tab-${name}`)); }, 100);
 }
 
-// ── 초기 로드 ────────────────────────────────────────────────────────────
-loadData();
+// ── 초기 로드 (로그인 후 showApp()에서 호출) ──────────────────────────────
 </script>
 </body>
 </html>
