@@ -43,7 +43,9 @@ async function takeScreenshots() {
   const outDir = path.resolve("screenshots");
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-  // 4) 환자 테이블 스크린샷
+  // 4) 호버 상태 해제 → 환자 테이블 스크린샷
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(300);
   const tableEl = await page.$("#tab-table");
   const tablePath = path.join(outDir, "table.png");
   if (tableEl) {
@@ -54,6 +56,8 @@ async function takeScreenshots() {
   // 5) 일별 히트맵 탭 클릭 → 스크린샷
   await page.click('button:has-text("일별 히트맵")');
   await page.waitForTimeout(2000);
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(300);
   const heatmapEl = await page.$("#tab-heatmap");
   const heatmapPath = path.join(outDir, "heatmap.png");
   if (heatmapEl) {
