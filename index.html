@@ -687,19 +687,20 @@ function renderHeatmap() {
       const daySessions = sess[d] || [];
       const hasSession = daySessions.length > 0;
 
+      const startInfo = r.start_str ? `🗓️ 가입: ${r.start_str}` : '';
       if (d >= r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>⬜ 미경과`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>⬜ 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
           const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
-          return `${e.kstTime || ''} KST`;
-        }).join(", ");
-        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>✅ 사용 — ${sidLines}`);
+          return `🔑 ${masked} (${e.kstTime || ''} KST)`;
+        }).join("<br>");
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>✅ 사용<br>${sidLines}`);
       } else {
         rowVals.push(0);
-        rowHover.push(`📋 ${r.subject_id}<br>📅 ${label}일차 (${dateStr})<br>❌ 미사용`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>❌ 미사용`);
       }
     }
     matrix.push(rowVals);
@@ -806,7 +807,7 @@ function renderHospitalChart() {
       <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
-      const compColor = s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#d97706" : "#dc2626";
+      const compColor = s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#d97706" : "#dc2626";
       const noUseColor = s.noUseRate > 30 ? "#dc2626" : s.noUseRate > 15 ? "#d97706" : "#525252";
       return `<tr>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-left font-semibold whitespace-nowrap">${s.hospital}</td>
@@ -903,7 +904,7 @@ function renderHospitalChart() {
   const entries = sortedByAvg;
   const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
-  const colors   = entries.map(e => e.avg >= 80 ? "#059669" : e.avg >= 50 ? "#525252" : "#dc2626");
+  const colors   = entries.map(e => e.avg >= 80 ? "#34d399" : e.avg >= 50 ? "#525252" : "#dc2626");
   const textVals = xValues.map(v => v + "%");
 
   Plotly.newPlot("hospital-chart", [{
@@ -951,12 +952,12 @@ function renderHospitalChart() {
     y: s.compValues,
     name: s.hospital.replace(/대학교/g, "대"),
     marker: {
-      color: s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#525252" : "#dc2626",
+      color: s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#525252" : "#dc2626",
       size: 5,
       opacity: 0.7,
     },
     line: { width: 1.5 },
-    fillcolor: s.avg >= 80 ? "rgba(5,150,105,0.08)" : s.avg >= 50 ? "rgba(82,82,82,0.08)" : "rgba(220,38,38,0.08)",
+    fillcolor: s.avg >= 80 ? "rgba(52,211,153,0.08)" : s.avg >= 50 ? "rgba(82,82,82,0.08)" : "rgba(220,38,38,0.08)",
     boxpoints: "all",
     jitter: 0.4,
     pointpos: 0,
