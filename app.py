@@ -349,15 +349,12 @@ def render_hospital_chart(df: pd.DataFrame):
         avg_used = grp["used_days"].mean()
         grp_valid = grp[grp["compliance"].notna()]
         avg_comp = grp_valid["compliance"].mean() if len(grp_valid) else 0
-        grp_weekly = grp[grp["weekly_compliance"].notna()]
-        avg_weekly = grp_weekly["weekly_compliance"].mean() if len(grp_weekly) else 0
         yellow_cnt = ((grp.get("yellow_cards", pd.Series(dtype=int)) > 0) & (~grp["is_ended"])).sum() if "yellow_cards" in grp.columns else 0
         hospital_stats.append({
             "기관": hosp, "전체": total, "사용중": int(active), "만료": int(ended),
             "미사용자": int(no_use), "미사용률(%)": round(no_use_rate, 1),
-            "옐로카드": int(yellow_cnt), "평균 사용일": round(avg_used, 1),
+            "옥로카드": int(yellow_cnt), "평균 사용일": round(avg_used, 1),
             "평균 순응률(%)": round(avg_comp, 1),
-            "주당 순응도(%)": round(avg_weekly, 1),
         })
 
     stats_df = pd.DataFrame(hospital_stats).sort_values("평균 순응률(%)")
@@ -496,9 +493,7 @@ total = len(df_view)
 no_use_cnt = (df_view["used_days"] == 0).sum()
 avg_comp = df_view[df_view["elapsed_days"] > 0]["compliance"].mean()
 
-avg_weekly = df_view[df_view["weekly_compliance"].notna()]["weekly_compliance"].mean()
-
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 c1.metric("전체 대상자", f"{total}명")
 c2.metric(
     "미사용자",
@@ -507,7 +502,6 @@ c2.metric(
     delta_color="inverse",
 )
 c3.metric("평균 순응률", f"{avg_comp:.1f}%" if pd.notna(avg_comp) else "-")
-c4.metric("평균 주당 순응도", f"{avg_weekly:.1f}%" if pd.notna(avg_weekly) else "-")
 
 st.divider()
 
@@ -521,7 +515,7 @@ with tab1:
         display = df_view[[
             "subject_id", "hospital",
             "start_dt", "end_dt", "elapsed_days", "used_days",
-            "compliance", "weekly_compliance",
+            "compliance",
         ]].copy()
 
         display["start_dt"] = display["start_dt"].dt.strftime("%Y-%m-%d")
@@ -535,7 +529,6 @@ with tab1:
             "elapsed_days": "경과일",
             "used_days": "사용일",
             "compliance": "순응률(%)",
-            "weekly_compliance": "주당 순응도(%)",
         }, inplace=True)
 
         display.sort_values("순응률(%)", ascending=True, na_position="first", inplace=True)
