@@ -173,7 +173,7 @@ def load_data():
     # 처방 종료 여부
     df["is_ended"] = df["end_dt"].notna() & (df["end_dt"] < now)
 
-    return df, session_map
+    return df, session_map, used_days_counter
 
 
 # ── 색상 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -182,12 +182,8 @@ def compliance_row_color(val):
     """pandas Styler용 순응률 셀 배경색"""
     if val is None or pd.isna(val):
         return ""
-    if val == 0:
-        return "background-color: #FFCCCC"
     if val < 50:
-        return "background-color: #FFF3CD"
-    if val >= 80:
-        return "background-color: #ccfbf1"
+        return "background-color: rgba(244,114,182,0.12)"
     return ""
 
 
@@ -241,12 +237,9 @@ def render_heatmap(df: pd.DataFrame, session_map: dict):
     x_labels = [str(d) for d in range(1, max_days + 1)]
 
     colorscale = [
-        [0.0,  "#FF6B6B"],
-        [0.33, "#FF6B6B"],
-        [0.34, "#2dd4bf"],
-        [0.67, "#2dd4bf"],
-        [0.67, "#E8E8E8"],
-        [1.0,  "#E8E8E8"],
+        [0.00, "#fca5a5"], [0.33, "#fca5a5"],
+        [0.34, "#2dd4bf"], [0.66, "#2dd4bf"],
+        [0.67, "#f5f5f5"], [1.00, "#f5f5f5"],
     ]
 
     fig = go.Figure(
@@ -302,7 +295,7 @@ def render_distribution(df: pd.DataFrame):
         fig.add_trace(
             go.Histogram(
                 x=df_valid["compliance"],
-                marker_color="#4A90D9",
+                marker_color="#a3a3a3",
                 opacity=0.8,
                 xbins=dict(start=0, end=100, size=10),
             )
@@ -319,7 +312,7 @@ def render_distribution(df: pd.DataFrame):
         fig.add_trace(
             go.Box(
                 y=df_valid["compliance"],
-                marker_color="#4A90D9",
+                marker_color="#a3a3a3",
                 boxpoints="all",
                 jitter=0.3,
                 pointpos=-1.5,
@@ -332,7 +325,7 @@ def render_distribution(df: pd.DataFrame):
         st.plotly_chart(fig, use_container_width=True)
 
 
-def render_hospital_chart(df: pd.DataFrame):
+def render_hospital_chart(df: pd.DataFrame, used_days_counter: dict):
     df_valid = df[df["compliance"].notna()].copy()
     if df_valid.empty:
         st.info("표시할 데이터가 없습니다.")
@@ -395,54 +388,84 @@ def render_hospital_chart(df: pd.DataFrame):
 
     st.divider()
 
-    # ── 차트: 평균 순응률 + 박스플롯 ──
+    # ── 차트: 평균 사용률 + 주차별 추이 ──
     col_bar, col_box = st.columns(2)
 
     with col_bar:
         summary = stats_df.copy()
         y_labels = [f"{row['기관']} ({row['전체']}명)" for _, row in summary.iterrows()]
         colors = [
-            "#2dd4bf" if v >= 80 else "#4A90D9" if v >= 50 else "#FF6B6B"
+            "#f472b6" if v < 50 else "#a3a3a3"
             for v in summary["평균 순응률(%)"]
         ]
 
         fig = go.Figure(
-            go.Bar(
+            go.Scatter(
                 x=summary["평균 순응률(%)"],
                 y=y_labels,
-                orientation="h",
-                marker_color=colors,
+                mode="markers+text",
+                marker=dict(color=colors, size=14, line=dict(color="white", width=2)),
                 text=summary["평균 순응률(%)"].astype(str) + "%",
-                textposition="outside",
+                textposition="middle right",
+                textfont=dict(size=12, color="#525252"),
+                hovertemplate="<b>%{y}</b><br>사용률: %{x}%<extra></extra>",
             )
         )
         fig.update_layout(
-            title="평균 순응률",
+            title="평균 사용률",
             xaxis_title="순응률(%)",
-            xaxis=dict(range=[0, 115]),
+            xaxis=dict(range=[0, 115], gridcolor="#f5f5f5", linecolor="#e5e5e5", zeroline=False),
+            yaxis=dict(linecolor="#e5e5e5"),
             margin=dict(l=0, r=60, t=40, b=0),
-            height=max(300, len(summary) * 44),
+            height=max(300, len(summary) * 55),
+            plot_bgcolor="#fafafa",
         )
         st.plotly_chart(fig, use_container_width=True)
 
     with col_box:
+        # 주차별 사용률 추이 (라인 차트)
+        week_labels = ["1주차", "2주차", "3주차", "4주차"]
+        line_colors = ["#a3a3a3", "#737373", "#525252", "#f472b6", "#c084fc", "#60a5fa"]
         fig = go.Figure()
-        for hosp in stats_df["기관"]:
-            grp_valid = df_valid[df_valid["hospital"] == hosp]
-            color = "#2dd4bf" if grp_valid["compliance"].mean() >= 80 else "#4A90D9" if grp_valid["compliance"].mean() >= 50 else "#FF6B6B"
-            fig.add_trace(go.Box(
-                y=grp_valid["compliance"],
+        for i, (_, row) in enumerate(stats_df.iterrows()):
+            hosp = row["기관"]
+            hosp_users = df[df["hospital"] == hosp]
+            week_avgs = []
+            for w in range(4):
+                scores = []
+                for _, u in hosp_users.iterrows():
+                    elapsed = u["elapsed_days"]
+                    if elapsed == 0:
+                        continue
+                    uid = u["user_id"]
+                    user_sessions = used_days_counter.get(uid, set())
+                    week_start = w * 7
+                    week_end = week_start + 7
+                    # 완료된 주만 포함
+                    if elapsed < week_end:
+                        continue
+                    used_in_week = sum(1 for d in user_sessions if week_start <= d < week_end)
+                    score = 100.0 if used_in_week >= 3 else min(round(used_in_week / 3 * 100, 1), 100.0)
+                    scores.append(score)
+                week_avgs.append(sum(scores) / len(scores) if scores else None)
+            fig.add_trace(go.Scatter(
+                x=week_labels, y=week_avgs,
+                mode="lines+markers",
                 name=hosp.replace("대학교", "대"),
-                marker_color=color,
-                boxpoints="all", jitter=0.4, pointpos=0,
+                line=dict(color=line_colors[i % len(line_colors)], width=2),
+                marker=dict(size=7),
+                connectgaps=False,
+                hovertemplate="<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>",
             ))
         fig.update_layout(
-            title="순응률 분포",
-            yaxis_title="순응률(%)",
-            yaxis=dict(range=[-5, 110]),
-            showlegend=False,
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=max(300, len(stats_df) * 44),
+            title="주차별 사용률 추이",
+            yaxis_title="사용률(%)",
+            yaxis=dict(range=[0, 110], gridcolor="#f5f5f5", linecolor="#e5e5e5", zeroline=False),
+            xaxis=dict(linecolor="#e5e5e5"),
+            legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center"),
+            margin=dict(l=0, r=0, t=40, b=70),
+            height=max(300, len(stats_df) * 55),
+            plot_bgcolor="#fafafa",
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -465,7 +488,7 @@ with st.sidebar:
 # 데이터 로드
 with st.spinner("데이터를 불러오는 중..."):
     try:
-        df, session_map = load_data()
+        df, session_map, used_days_counter = load_data()
     except Exception as e:
         st.error(f"데이터 로드 실패: {e}")
         st.stop()
@@ -548,4 +571,4 @@ with tab3:
     render_distribution(df_view)
 
 with tab4:
-    render_hospital_chart(df_view)
+    render_hospital_chart(df_view, used_days_counter)
