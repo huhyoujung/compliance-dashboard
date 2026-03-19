@@ -54,9 +54,12 @@
     .top-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
     .top-header-brand { font-size: 15px; font-weight: 700; color: var(--c-primary); }
     .top-header-right { display: flex; align-items: center; gap: 12px; }
+    .header-links { display: flex; gap: 12px; }
+    .header-links a { color: var(--c-text-secondary); text-decoration: none; font-size: 12px; transition: color .15s; }
+    .header-links a:hover { color: var(--c-primary); }
 
     /* ── 필터 바 ── */
-    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); }
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; padding: 12px 0; }
     .filter-bar .filter-label { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
     .filter-bar select { border: 1px solid var(--c-border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--c-surface); color: var(--c-text); cursor: pointer; }
     .filter-bar select:focus { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
@@ -73,10 +76,7 @@
     .hint-icon:hover + .hint-bubble { display: block; }
 
     /* ── 푸터 ── */
-    .site-footer { padding: 16px 36px; background: var(--c-surface); border-top: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--c-text-muted); }
-    .footer-links { display: flex; gap: 16px; }
-    .footer-links a { color: var(--c-text-secondary); text-decoration: none; transition: color .15s; }
-    .footer-links a:hover { color: var(--c-primary); }
+    .site-footer { padding: 16px 36px; background: var(--c-surface); border-top: 1px solid var(--c-border); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--c-text-muted); }
 
     /* ── 카드 ── */
     .cards { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
@@ -171,12 +171,12 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 9px; font-weight: 600; color: #fff;
     }
-    #mini-heatmap .mh-cell.used { background: #171717; }
+    #mini-heatmap .mh-cell.used { background: #34d399; color: #065f46; }
     #mini-heatmap .mh-cell.unused { background: #fca5a5; color: #171717; }
     #mini-heatmap .mh-cell.future { background: #f0f0f0; color: var(--c-text-muted); }
     #mini-heatmap .mh-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: var(--c-text-muted); }
     #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-    #mini-heatmap .mh-legend .lg-used::before { background: #171717; }
+    #mini-heatmap .mh-legend .lg-used::before { background: #34d399; }
     #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
     #mini-heatmap .mh-legend .lg-future::before { background: #f0f0f0; }
     tr[data-uid] { cursor: default; transition: background .1s; }
@@ -210,6 +210,10 @@
   <header class="top-header">
     <div class="top-header-brand">💊 사용률 대시보드</div>
     <div class="top-header-right">
+      <div class="header-links">
+        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer">📄 환자 데이터 시트 ↗</a>
+        <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer">📄 세션 기록 시트 ↗</a>
+      </div>
       <div class="caption" id="caption" style="margin-bottom:0">-</div>
       <button class="refresh-btn" onclick="loadData(true)">↻ 새로고침</button>
     </div>
@@ -217,7 +221,6 @@
 
   <!-- 메인 -->
   <main class="main">
-    <h1>확증임상 사용률 대시보드</h1>
 
     <!-- 통합 필터 바 -->
     <div class="filter-bar" id="filter-bar">
@@ -293,7 +296,7 @@
 
     <div id="tab-heatmap" style="display:none">
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#171717"></div>사용</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>사용</div>
         <div class="legend-item"><div class="legend-dot" style="background:#fca5a5"></div>미사용</div>
         <div class="legend-item"><div class="legend-dot" style="background:#f0f0f0"></div>미경과</div>
       </div>
@@ -312,10 +315,6 @@
 
   <!-- 푸터 -->
   <footer class="site-footer">
-    <div class="footer-links">
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer">📄 환자 데이터 시트 ↗</a>
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer">📄 세션 기록 시트 ↗</a>
-    </div>
     <span>© 2025 사용률 대시보드</span>
   </footer>
 </div>
@@ -748,7 +747,7 @@ function renderHeatmap() {
 
   const colorscale = [
     [0.00, "#fca5a5"], [0.33, "#fca5a5"],
-    [0.34, "#171717"], [0.66, "#171717"],
+    [0.34, "#34d399"], [0.66, "#34d399"],
     [0.67, "#f0f0f0"], [1.00, "#f0f0f0"],
   ];
 
@@ -777,7 +776,15 @@ function renderHeatmap() {
 
 // ── 기관별 차트 + 인사이트 ────────────────────────────────────────────────
 function renderHospitalChart() {
-  const validRows = filteredRows.filter(r => r.compliance !== null);
+  // 기관별 요약은 항상 전체 데이터 사용 (기관 필터 무시)
+  const hospRows = allRows.filter(r => {
+    const statusVal = document.getElementById("status-filter").value;
+    if (statusVal === "active" && r.is_ended) return false;
+    if (statusVal === "ended" && !r.is_ended) return false;
+    if (document.getElementById("yellow-card-only") && document.getElementById("yellow-card-only").checked && r.yellow_cards === 0) return false;
+    return true;
+  });
+  const validRows = hospRows.filter(r => r.compliance !== null);
   if (!validRows.length) {
     document.getElementById("hospital-insights").innerHTML = "";
     document.getElementById("hospital-kpi-wrap").innerHTML = "";
@@ -788,7 +795,7 @@ function renderHospitalChart() {
 
   // ── 기관별 통계 집계 ──
   const hospitalStats = {};
-  filteredRows.forEach(r => {
+  hospRows.forEach(r => {
     if (!hospitalStats[r.hospital]) {
       hospitalStats[r.hospital] = {
         hospital: r.hospital, total: 0, active: 0, ended: 0,
