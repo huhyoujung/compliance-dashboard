@@ -109,6 +109,34 @@
     .hospital-kpi-table tr:last-child td { border-bottom: none; }
     @media (max-width: 900px) { .insight-grid { grid-template-columns: 1fr; } }
 
+    /* ── 미니 히트맵 툴팁 ── */
+    #mini-heatmap {
+      display: none; position: fixed; z-index: 1000;
+      background: #fff; border-radius: 10px; padding: 14px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.18); pointer-events: none;
+      max-width: 420px;
+    }
+    #mini-heatmap .mh-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #333; }
+    #mini-heatmap .mh-meta { font-size: 11px; color: #888; margin-bottom: 8px; }
+    #mini-heatmap .mh-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;
+    }
+    #mini-heatmap .mh-cell {
+      width: 24px; height: 24px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 600; color: #fff;
+    }
+    #mini-heatmap .mh-cell.used { background: #28A745; }
+    #mini-heatmap .mh-cell.unused { background: #FF6B6B; }
+    #mini-heatmap .mh-cell.future { background: #E8E8E8; color: #bbb; }
+    #mini-heatmap .mh-legend { display: flex; gap: 12px; margin-top: 8px; font-size: 11px; color: #666; }
+    #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+    #mini-heatmap .mh-legend .lg-used::before { background: #28A745; }
+    #mini-heatmap .mh-legend .lg-unused::before { background: #FF6B6B; }
+    #mini-heatmap .mh-legend .lg-future::before { background: #E8E8E8; }
+    tr[data-uid] { cursor: default; }
+    tr[data-uid]:hover { background: #f0f4ff !important; }
+
     /* ── 스피너 ── */
     #spinner { display: none; position: fixed; inset: 0; background: rgba(255,255,255,.7); justify-content: center; align-items: center; z-index: 999; font-size: 16px; font-weight: 600; color: #1a73e8; }
     #spinner.show { display: flex; }
@@ -253,6 +281,8 @@
     </div>
   </main>
 </div>
+
+<div id="mini-heatmap"></div>
 
 <script>
 // ── 상수 ──────────────────────────────────────────────────────────────────
@@ -592,7 +622,7 @@ function renderTable() {
     const ycDisplay = r.yellow_cards > 0
       ? `<span style="color:#e53935;font-weight:700">${r.yellow_cards}</span>`
       : `<span style="color:#aaa">0</span>`;
-    return `<tr style="${bg}">
+    return `<tr style="${bg}" data-uid="${r.user_id}">
       <td>${r.subject_id}</td>
       <td>${r.hospital}</td>
       <td>${r.start_str}${endedBadge}</td>
@@ -605,6 +635,65 @@ function renderTable() {
   }).join("");
 
   document.getElementById("table-caption").textContent = `총 ${rows.length}명 표시 중`;
+  attachHoverEvents();
+}
+
+// ── 미니 히트맵 (테이블 호버) ─────────────────────────────────────────────
+function buildMiniHeatmapHTML(r) {
+  const sess = r.sessions || {};
+  let title = `<div class="mh-title">${r.subject_id} — ${r.hospital}</div>`;
+  let meta = `<div class="mh-meta">순응률 ${r.compliance !== null ? r.compliance.toFixed(1) + '%' : 'N/A'} · 경과 ${r.elapsed_days}일 · 사용 ${r.used_days}일</div>`;
+  let cells = '';
+  for (let d = 0; d < MAX_DAYS; d++) {
+    const daySessions = sess[d] || [];
+    const label = d + 1;
+    if (d >= r.elapsed_days) {
+      cells += `<div class="mh-cell future">${label}</div>`;
+    } else if (daySessions.length > 0) {
+      cells += `<div class="mh-cell used">${label}</div>`;
+    } else {
+      cells += `<div class="mh-cell unused">${label}</div>`;
+    }
+  }
+  const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span></div>`;
+  return title + meta + `<div class="mh-grid">${cells}</div>` + legend;
+}
+
+let hoverAttached = false;
+function attachHoverEvents() {
+  if (hoverAttached) return;
+  hoverAttached = true;
+  const tooltip = document.getElementById('mini-heatmap');
+  const tbody = document.getElementById('table-body');
+  tbody.addEventListener('mouseover', e => {
+    const tr = e.target.closest('tr[data-uid]');
+    if (!tr) return;
+    const uid = tr.getAttribute('data-uid');
+    const row = filteredRows.find(r => r.user_id === uid);
+    if (!row) return;
+    tooltip.innerHTML = buildMiniHeatmapHTML(row);
+    tooltip.style.display = 'block';
+    positionTooltip(e, tooltip);
+  });
+  tbody.addEventListener('mousemove', e => {
+    const tr = e.target.closest('tr[data-uid]');
+    if (!tr) { tooltip.style.display = 'none'; return; }
+    positionTooltip(e, tooltip);
+  });
+  tbody.addEventListener('mouseleave', () => {
+    tooltip.style.display = 'none';
+  });
+}
+
+function positionTooltip(e, el) {
+  const pad = 16;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  const rect = el.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth - pad) x = e.clientX - rect.width - pad;
+  if (y + rect.height > window.innerHeight - pad) y = e.clientY - rect.height - pad;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
 }
 
 // ── 히트맵 ───────────────────────────────────────────────────────────────
