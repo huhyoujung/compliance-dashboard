@@ -354,11 +354,14 @@ function calcWeeklyCompliance(sessions, elapsedDays) {
     for (let d = weekStart; d < Math.min(weekEnd, elapsedDays); d++) {
       if (sessionDayNums.has(d)) usedInWeek++;
     }
+    const completed = elapsedDays >= weekEnd;
     const score = usedInWeek >= 3 ? 100 : Math.min((usedInWeek / 3) * 100, 100);
-    weeklyScores.push({ week: w + 1, score, used: usedInWeek });
+    weeklyScores.push({ week: w + 1, score, used: usedInWeek, completed });
   }
   if (weeklyScores.length === 0) return { avg: null, scores: [] };
-  const avg = weeklyScores.reduce((a, b) => a + b.score, 0) / weeklyScores.length;
+  // 평균은 완료된 주만으로 계산
+  const completedScores = weeklyScores.filter(w => w.completed);
+  const avg = completedScores.length ? completedScores.reduce((a, b) => a + b.score, 0) / completedScores.length : null;
   return { avg, scores: weeklyScores };
 }
 
@@ -643,13 +646,17 @@ function buildMiniHeatmapHTML(r) {
       + `<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px">📊 주별 순응도 (주 3회 이상 → 100%)</div>`
       + ws.map(w => {
         const barWidth = Math.max(w.score, 4);
-        const barColor = w.score >= 100 ? '#34d399' : w.score >= 66.7 ? '#fbbf24' : '#f87171';
-        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">`
+        const barColor = w.completed
+          ? (w.score >= 100 ? '#34d399' : w.score >= 66.7 ? '#fbbf24' : '#f87171')
+          : '#94a3b8';
+        const label = w.completed ? `${w.score.toFixed(0)}%` : `${w.score.toFixed(0)}%`;
+        const suffix = w.completed ? '' : ' <span style="font-size:9px;color:#94a3b8;font-style:italic">진행중</span>';
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px${w.completed ? '' : ';opacity:0.65'}">`
           + `<span style="font-size:11px;color:#64748b;min-width:32px">${w.week}주차</span>`
           + `<div style="flex:1;background:#e2e8f0;border-radius:4px;height:14px;position:relative;overflow:hidden">`
           + `<div style="width:${barWidth}%;height:100%;background:${barColor};border-radius:4px;transition:width .3s"></div></div>`
-          + `<span style="font-size:11px;font-weight:600;min-width:48px;text-align:right;color:${barColor}">${w.score.toFixed(0)}%</span>`
-          + `<span style="font-size:10px;color:#94a3b8">(${w.used}/3회)</span></div>`;
+          + `<span style="font-size:11px;font-weight:600;min-width:48px;text-align:right;color:${barColor}">${label}</span>`
+          + `<span style="font-size:10px;color:#94a3b8">(${w.used}/3회)${suffix}</span></div>`;
       }).join('')
       + `</div>`;
   }
