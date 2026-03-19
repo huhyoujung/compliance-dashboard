@@ -422,15 +422,21 @@ function parseSessionCsv(csvText) {
   const map = {};  // { user_id: { "YYYY-MM-DD": [{sid, kstTime}, ...] } }
   dataRows.forEach(r => {
     const uid = (r[ci("user_id")] || "").trim();
+    const sessionDay = (r[ci("session_day")] || "").trim();   // 백엔드에서 KST 보정된 날짜
     const createdAt = (r[ci("created_at")] || "").trim();
     const sid = (r[ci("counted_session_id")] || "").trim();
-    if (!uid || !createdAt) return;
-    // created_at은 UTC → +9h로 KST 날짜 추출
-    const utc = new Date(createdAt + "Z");  // UTC 명시
-    if (isNaN(utc)) return;
-    const kst = new Date(utc.getTime() + 9 * 3600000);
-    const dayStr = kst.toISOString().slice(0, 10);  // "YYYY-MM-DD" KST
-    const kstTime = kst.toISOString().slice(11, 16);  // "HH:MM" KST
+    if (!uid || !sessionDay) return;
+    // session_day: 이미 KST 보정된 날짜 (백엔드 로직)
+    const dayStr = sessionDay.slice(0, 10);  // "YYYY-MM-DD"
+    // created_at → KST 시간(HH:MM) 표시용
+    let kstTime = "";
+    if (createdAt) {
+      const utc = new Date(createdAt + "Z");
+      if (!isNaN(utc)) {
+        const kst = new Date(utc.getTime() + 9 * 3600000);
+        kstTime = kst.toISOString().slice(11, 16);
+      }
+    }
     if (!map[uid]) map[uid] = {};
     if (!map[uid][dayStr]) map[uid][dayStr] = [];
     if (sid) map[uid][dayStr].push({ sid, kstTime });
