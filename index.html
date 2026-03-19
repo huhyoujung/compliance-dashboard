@@ -227,9 +227,10 @@
     <div id="tab-hospital" style="display:none">
       <div id="hospital-insights"></div>
       <div id="hospital-kpi-wrap"></div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-3 gap-4">
         <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="hospital-chart" class="rounded-lg overflow-hidden"></div></div>
-        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="hospital-box-chart" class="rounded-lg overflow-hidden"></div></div>
+        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="weekly-trend-chart" class="rounded-lg overflow-hidden"></div></div>
+        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="usage-dist-chart" class="rounded-lg overflow-hidden"></div></div>
       </div>
     </div>
   </main>
@@ -837,7 +838,8 @@ function renderHospitalChart() {
     document.getElementById("hospital-insights").innerHTML = "";
     document.getElementById("hospital-kpi-wrap").innerHTML = "";
     Plotly.purge("hospital-chart");
-    Plotly.purge("hospital-box-chart");
+    Plotly.purge("weekly-trend-chart");
+    Plotly.purge("usage-dist-chart");
     return;
   }
 
@@ -1014,61 +1016,65 @@ function renderHospitalChart() {
     bargap: 0.35,
   }, { responsive: true });
 
-  // ── 기관별 사용률 분포 (스트립 차트) ──
-  const sortedStats = [...stats].sort((a,b) => a.avg - b.avg);
-  const stripTraces = [];
-  sortedStats.forEach(s => {
-    const dotColor = s.avg < 50 ? "#f472b6" : "#a3a3a3";
-    stripTraces.push({
-      type: "scatter",
-      mode: "markers",
-      x: s.compValues.map(() => s.hospital.replace(/대학교/g, "대")),
-      y: s.compValues,
-      name: s.hospital.replace(/대학교/g, "대"),
-      marker: { color: dotColor, size: 10, opacity: 0.7, line: { color: "white", width: 1.5 } },
-      hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
-      showlegend: false,
+  // ── 주차별 사용률 추이 (라인 차트) ──
+  const weekLabels = ["1주차", "2주차", "3주차", "4주차"];
+  const lineColors = ["#a3a3a3", "#737373", "#525252", "#f472b6", "#c084fc", "#60a5fa"];
+  const trendTraces = stats.map((s, idx) => {
+    const weekAvgs = [0, 1, 2, 3].map(w => {
+      const scores = hospRows.filter(r => r.hospital === s.hospital && r.weekly_scores && r.weekly_scores[w] && r.weekly_scores[w].score !== null)
+        .map(r => r.weekly_scores[w].score);
+      return scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : null;
     });
+    return {
+      type: "scatter", mode: "lines+markers",
+      x: weekLabels, y: weekAvgs,
+      name: s.hospital.replace(/대학교/g, "대"),
+      line: { color: lineColors[idx % lineColors.length], width: 2 },
+      marker: { size: 7 },
+      connectgaps: false,
+      hovertemplate: "<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>",
+    };
   });
-  const avgShapes = sortedStats.map((s, i) => ({
-    type: "line", x0: i - 0.3, x1: i + 0.3, y0: s.avg, y1: s.avg,
-    xref: "x", yref: "y",
-    line: { color: s.avg < 50 ? "#f472b6" : "#737373", width: 2.5 },
-  }));
-  const avgAnnotations = sortedStats.map((s, i) => ({
-    x: i, y: s.avg, xref: "x", yref: "y",
-    text: `avg ${s.avg.toFixed(0)}%`, showarrow: false,
-    font: { size: 10, color: s.avg < 50 ? "#f472b6" : "#737373", family: "Inter, system-ui, sans-serif" },
-    xanchor: "center", yanchor: "bottom", yshift: 8,
-  }));
 
-  Plotly.newPlot("hospital-box-chart", stripTraces, {
-    title: { text: "사용률 분포", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
+  const chartH = Math.max(320, entries.length * 55);
+  Plotly.newPlot("weekly-trend-chart", trendTraces, {
+    title: { text: "주차별 사용률 추이", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
     yaxis: {
       title: { text: "사용률(%)", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
-      range: [-5, 110],
-      gridcolor: "#f5f5f5",
-      linecolor: "#e5e5e5",
-      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" },
-      zeroline: false,
+      range: [0, 110], gridcolor: "#f5f5f5", linecolor: "#e5e5e5",
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" }, zeroline: false,
     },
+    xaxis: { tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#525252" }, linecolor: "#e5e5e5" },
+    legend: { font: { family: "Inter, system-ui, sans-serif", size: 10 }, orientation: "h", y: -0.25, x: 0.5, xanchor: "center" },
+    margin: { l: 50, r: 15, t: 50, b: 70 },
+    height: chartH,
+    paper_bgcolor: "white", plot_bgcolor: "#fafafa",
+    hoverlabel: { bgcolor: "#171717", bordercolor: "#171717", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" } },
+  }, { responsive: true });
+
+  // ── 사용일수 분포 (히스토그램) ──
+  const usedDaysAll = hospRows.filter(r => r.compliance !== null).map(r => r.used_days);
+  Plotly.newPlot("usage-dist-chart", [{
+    type: "histogram",
+    x: usedDaysAll,
+    marker: { color: "rgba(163,163,163,0.6)", line: { color: "#737373", width: 1 } },
+    hovertemplate: "%{x}일: %{y}명<extra></extra>",
+    xbins: { size: 1 },
+  }], {
+    title: { text: "사용일수 분포", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
     xaxis: {
-      tickfont: { family: "Inter, system-ui, sans-serif", size: 10, color: "#525252" },
-      linecolor: "#e5e5e5",
-      type: "category",
+      title: { text: "사용일수", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#525252" }, linecolor: "#e5e5e5", dtick: 1,
     },
-    shapes: avgShapes,
-    annotations: avgAnnotations,
-    margin: { l: 55, r: 20, t: 50, b: 90 },
-    height: Math.max(320, entries.length * 55),
-    showlegend: false,
-    paper_bgcolor: "white",
-    plot_bgcolor: "#fafafa",
-    hoverlabel: {
-      bgcolor: "#171717",
-      bordercolor: "#171717",
-      font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" },
+    yaxis: {
+      title: { text: "인원수", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      gridcolor: "#f5f5f5", linecolor: "#e5e5e5", dtick: 1,
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" }, zeroline: false,
     },
+    margin: { l: 50, r: 15, t: 50, b: 50 },
+    height: chartH, bargap: 0.1,
+    paper_bgcolor: "white", plot_bgcolor: "#fafafa",
+    hoverlabel: { bgcolor: "#171717", bordercolor: "#171717", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" } },
   }, { responsive: true });
 }
 
