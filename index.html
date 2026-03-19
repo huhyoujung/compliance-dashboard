@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>확증임상 순응률 대시보드</title>
+  <title>확증임상 사용률 대시보드</title>
 
   <!-- CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -208,7 +208,7 @@
 <div class="layout">
   <!-- 헤더 -->
   <header class="top-header">
-    <div class="top-header-brand">💊 순응률 대시보드</div>
+    <div class="top-header-brand">💊 사용률 대시보드</div>
     <div class="top-header-right">
       <div class="caption" id="caption" style="margin-bottom:0">-</div>
       <button class="refresh-btn" onclick="loadData(true)">↻ 새로고침</button>
@@ -217,7 +217,7 @@
 
   <!-- 메인 -->
   <main class="main">
-    <h1>확증임상 순응률 대시보드</h1>
+    <h1>확증임상 사용률 대시보드</h1>
 
     <!-- 통합 필터 바 -->
     <div class="filter-bar" id="filter-bar">
@@ -258,7 +258,7 @@
         <div class="card-value danger" id="card-yellow">-</div>
       </div>
       <div class="card">
-        <div class="card-label">평균 순응률 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">사용일 / 경과일 × 100</span></span></div>
+        <div class="card-label">평균 사용률 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">사용일 / 경과일 × 100</span></span></div>
         <div class="card-value success" id="card-avg">-</div>
       </div>
     </div>
@@ -267,7 +267,6 @@
     <div class="tabs" id="main-tabs">
       <button class="tab-btn active" onclick="switchTab('table', this)">환자 테이블</button>
       <button class="tab-btn" onclick="switchTab('heatmap', this)">일별 히트맵</button>
-      <button class="tab-btn" onclick="switchTab('dist', this)">순응률 분포</button>
       <button class="tab-btn" onclick="switchTab('hospital', this)">기관별 요약</button>
     </div>
 
@@ -282,7 +281,7 @@
               <th onclick="sortTable('end_dt')">처방 종료일 ↕</th>
               <th onclick="sortTable('elapsed_days')">경과일 ↕</th>
               <th onclick="sortTable('used_days')">사용일 ↕</th>
-              <th onclick="sortTable('compliance')">순응률(%) ↕</th>
+              <th onclick="sortTable('compliance')">사용률(%) ↕</th>
               <th onclick="sortTable('yellow_cards')">옐로카드 ↕</th>
             </tr>
           </thead>
@@ -301,18 +300,6 @@
       <div id="heatmap-chart"></div>
     </div>
 
-    <div id="tab-dist" style="display:none">
-      <div class="tab-desc">
-        환자들의 순응률이 어떻게 분포되어 있는지 한눈에 파악할 수 있습니다. <strong>히스토그램</strong>은 순응률 구간별 환자 수, <strong>박스플롯</strong>은 중앙값·사분위수 등 통계적 분포를 보여줍니다.
-      </div>
-      <div class="tabs" style="margin-bottom:12px">
-        <button class="tab-btn active" onclick="switchDistTab('hist', this)">히스토그램</button>
-        <button class="tab-btn" onclick="switchDistTab('box', this)">박스플롯</button>
-      </div>
-      <div id="dist-hist-chart"></div>
-      <div id="dist-box-chart" style="display:none"></div>
-    </div>
-
     <div id="tab-hospital" style="display:none">
       <div id="hospital-insights"></div>
       <div id="hospital-kpi-wrap"></div>
@@ -329,7 +316,7 @@
       <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer">📄 환자 데이터 시트 ↗</a>
       <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer">📄 세션 기록 시트 ↗</a>
     </div>
-    <span>© 2025 순응률 대시보드</span>
+    <span>© 2025 사용률 대시보드</span>
   </footer>
 </div>
 
@@ -581,7 +568,6 @@ function applyFilters() {
   renderCards();
   renderTable();
   renderHeatmap();
-  renderDist();
   renderHospitalChart();
 }
 
@@ -660,7 +646,7 @@ function renderTable() {
 function buildMiniHeatmapHTML(r) {
   const sess = r.sessions || {};
   let title = `<div class="mh-title">${r.subject_id} — ${r.hospital}</div>`;
-  let meta = `<div class="mh-meta">순응률 ${r.compliance !== null ? r.compliance.toFixed(1) + '%' : 'N/A'} · 경과 ${r.elapsed_days}일 · 사용 ${r.used_days}일</div>`;
+  let meta = `<div class="mh-meta">사용률 ${r.compliance !== null ? r.compliance.toFixed(1) + '%' : 'N/A'} · 경과 ${r.elapsed_days}일 · 사용 ${r.used_days}일</div>`;
   let cells = '';
   for (let d = 0; d < MAX_DAYS; d++) {
     const daySessions = sess[d] || [];
@@ -789,51 +775,6 @@ function renderHeatmap() {
   }, { responsive: true });
 }
 
-// ── 분포 차트 ────────────────────────────────────────────────────────────
-function renderDist() {
-  const validRows = filteredRows.filter(r => r.compliance !== null);
-  const compValues = validRows.map(r => r.compliance);
-
-  if (!compValues.length) return;
-
-  // 히스토그램
-  Plotly.newPlot("dist-hist-chart", [{
-    type: "histogram",
-    x: compValues,
-    marker: { color: "#171717", opacity: 0.85 },
-    xbins: { start: 0, end: 100, size: 10 },
-  }], {
-    xaxis: { title: "순응률(%)", range: [0, 100] },
-    yaxis: { title: "환자 수" },
-    margin: { l: 50, r: 20, t: 30, b: 50 },
-    paper_bgcolor: "white",
-    plot_bgcolor: "white",
-  }, { responsive: true });
-
-  // 박스플롯
-  Plotly.newPlot("dist-box-chart", [{
-    type: "box",
-    y: compValues,
-    marker: { color: "#171717" },
-    boxpoints: "all",
-    jitter: 0.3,
-    pointpos: -1.5,
-    name: "순응률",
-  }], {
-    yaxis: { title: "순응률(%)" },
-    margin: { l: 50, r: 20, t: 30, b: 30 },
-    paper_bgcolor: "white",
-    plot_bgcolor: "white",
-  }, { responsive: true });
-}
-
-function switchDistTab(tab, btn) {
-  document.getElementById("dist-hist-chart").style.display = tab === "hist" ? "" : "none";
-  document.getElementById("dist-box-chart").style.display  = tab === "box"  ? "" : "none";
-  document.querySelectorAll("#tab-dist .tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-}
-
 // ── 기관별 차트 + 인사이트 ────────────────────────────────────────────────
 function renderHospitalChart() {
   const validRows = filteredRows.filter(r => r.compliance !== null);
@@ -876,7 +817,7 @@ function renderHospitalChart() {
     <thead><tr>
       <th>기관</th><th>전체</th><th>사용중</th><th>만료</th>
       <th>미사용자</th><th>미사용률</th><th>옐로카드</th>
-      <th>평균 사용일</th><th>평균 순응률</th>
+      <th>평균 사용일</th><th>평균 사용률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
       const compColor = s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#d97706" : "#dc2626";
@@ -899,13 +840,13 @@ function renderHospitalChart() {
   const totalAll = stats.reduce((s,h) => s + h.total, 0);
   const avgAll = validRows.reduce((s,r) => s + r.compliance, 0) / validRows.length;
 
-  // 1) 가장 순응률 낮은 기관
+  // 1) 가장 사용률 낮은 기관
   const worst = sortedByAvg[0];
   if (worst && worst.avg < avgAll) {
     insights.push({
       type: "danger",
-      title: "⚠️ 순응률 최하위 기관",
-      text: `<strong>${worst.hospital}</strong>의 평균 순응률이 <strong>${worst.avg.toFixed(1)}%</strong>로 전체 평균(${avgAll.toFixed(1)}%) 대비 ${(avgAll - worst.avg).toFixed(1)}%p 낮습니다.`,
+      title: "⚠️ 사용률 최하위 기관",
+      text: `<strong>${worst.hospital}</strong>의 평균 사용률이 <strong>${worst.avg.toFixed(1)}%</strong>로 전체 평균(${avgAll.toFixed(1)}%) 대비 ${(avgAll - worst.avg).toFixed(1)}%p 낮습니다.`,
     });
   }
 
@@ -934,8 +875,8 @@ function renderHospitalChart() {
   if (best && best.avg > avgAll) {
     insights.push({
       type: "success",
-      title: "🏆 순응률 우수 기관",
-      text: `<strong>${best.hospital}</strong>의 평균 순응률이 <strong>${best.avg.toFixed(1)}%</strong>로 가장 높습니다.`,
+      title: "🏆 사용률 우수 기관",
+      text: `<strong>${best.hospital}</strong>의 평균 사용률이 <strong>${best.avg.toFixed(1)}%</strong>로 가장 높습니다.`,
     });
   }
 
@@ -948,7 +889,7 @@ function renderHospitalChart() {
       insights.push({
         type: "warning",
         title: "📊 기관 간 편차",
-        text: `기관 간 평균 순응률 차이가 <strong>${gap.toFixed(1)}%p</strong>로, 관리 격차가 큽니다. 하위 기관의 사용 독려가 필요합니다.`,
+        text: `기관 간 평균 사용률 차이가 <strong>${gap.toFixed(1)}%p</strong>로, 관리 격차가 큽니다. 하위 기관의 사용 독려가 필요합니다.`,
       });
     }
   }
@@ -971,7 +912,7 @@ function renderHospitalChart() {
   ).join("")}</div>` : "";
   document.getElementById("hospital-insights").innerHTML = insightHtml;
 
-  // ── 평균 순응률 바 차트 ──
+  // ── 평균 사용률 바 차트 ──
   const entries = sortedByAvg;
   const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
@@ -987,8 +928,8 @@ function renderHospitalChart() {
     text: textVals,
     textposition: "outside",
   }], {
-    title: { text: "평균 순응률", font: { size: 14 } },
-    xaxis: { title: "순응률(%)", range: [0, 115] },
+    title: { text: "평균 사용률", font: { size: 14 } },
+    xaxis: { title: "사용률(%)", range: [0, 115] },
     margin: { l: 200, r: 60, t: 40, b: 50 },
     height: Math.max(300, entries.length * 50),
     paper_bgcolor: "white",
@@ -1007,8 +948,8 @@ function renderHospitalChart() {
   }));
 
   Plotly.newPlot("hospital-box-chart", boxTraces, {
-    title: { text: "순응률 분포", font: { size: 14 } },
-    yaxis: { title: "순응률(%)", range: [-5, 110] },
+    title: { text: "사용률 분포", font: { size: 14 } },
+    yaxis: { title: "사용률(%)", range: [-5, 110] },
     margin: { l: 50, r: 20, t: 40, b: 80 },
     height: Math.max(300, entries.length * 50),
     showlegend: false,
@@ -1018,7 +959,7 @@ function renderHospitalChart() {
 }
 
 // ── 탭 전환 ──────────────────────────────────────────────────────────────
-const TAB_IDS = ["table", "heatmap", "dist", "hospital"];
+const TAB_IDS = ["table", "heatmap", "hospital"];
 
 function switchTab(name, btn) {
   TAB_IDS.forEach(id => {
@@ -1029,7 +970,6 @@ function switchTab(name, btn) {
 
   // 탭 전환 시 차트 재렌더 (Plotly responsive 갱신)
   if (name === "heatmap") renderHeatmap();
-  if (name === "dist")    renderDist();
   if (name === "hospital") { renderHospitalChart(); }
   setTimeout(() => { Plotly.Plots.resize(document.getElementById(`tab-${name}`)); }, 100);
 }
