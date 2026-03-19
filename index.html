@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>확증임상 사용률 대시보드</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
 
   <!-- CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -691,9 +692,11 @@ function renderHeatmap() {
       const hasSession = daySessions.length > 0;
 
       const startInfo = r.start_str ? `🗓️ 가입: ${r.start_str}` : '';
+      const isToday = dayDt && now.getFullYear() === dayDt.getFullYear() && now.getMonth() === dayDt.getMonth() && now.getDate() === dayDt.getDate();
+      const todayTag = (d === 0 && isToday) ? '<br>🆕 오늘 가입' : '';
       if (d >= r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>⬜ 미경과`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})${todayTag}<br>⬜ 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
