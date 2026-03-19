@@ -682,7 +682,10 @@ function renderHeatmap() {
     for (let d = 0; d < MAX_DAYS; d++) {
       const dayOffset = d * 86400000;
       const dayDt = r.start_dt ? new Date(r.start_dt.getTime() + dayOffset) : null;
-      const dateStr = dayDt ? `${dayDt.getMonth()+1}/${dayDt.getDate()}` : "?";
+      const nextDt = r.start_dt ? new Date(r.start_dt.getTime() + (d + 1) * 86400000) : null;
+      const pad2 = n => String(n).padStart(2, '0');
+      const fmtDt = dt => dt ? `${pad2(dt.getMonth()+1)}/${pad2(dt.getDate())}` : '?';
+      const dayRange = dayDt && nextDt ? `${fmtDt(dayDt)} 00:00 ~ ${fmtDt(nextDt)} 00:00 KST` : '?';
       const label = d + 1;
       const daySessions = sess[d] || [];
       const hasSession = daySessions.length > 0;
@@ -690,7 +693,7 @@ function renderHeatmap() {
       const startInfo = r.start_str ? `🗓️ 가입: ${r.start_str}` : '';
       if (d >= r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>⬜ 미경과`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>⬜ 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
@@ -698,10 +701,10 @@ function renderHeatmap() {
           const dateTag = e.kstDate ? e.kstDate.slice(5).replace('-', '/') : '';
           return `🔑 ${masked} (${dateTag} ${e.kstTime || ''} KST)`;
         }).join("<br>");
-        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>✅ 사용<br>${sidLines}`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>✅ 사용<br>${sidLines}`);
       } else {
         rowVals.push(0);
-        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>❌ 미사용`);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>❌ 미사용`);
       }
     }
     matrix.push(rowVals);
