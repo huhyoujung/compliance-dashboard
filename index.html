@@ -250,15 +250,15 @@
         <div class="card-value" id="card-total">-</div>
       </div>
       <div class="card">
-        <div class="card-label">미사용자</div>
+        <div class="card-label">미사용자 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">처방 기간 동안 앱 세션이 0회인 환자</span></span></div>
         <div class="card-value danger" id="card-nouse">-</div>
       </div>
       <div class="card">
-        <div class="card-label">옐로카드 보유자</div>
+        <div class="card-label">옐로카드 보유자 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span></span></div>
         <div class="card-value danger" id="card-yellow">-</div>
       </div>
       <div class="card">
-        <div class="card-label">평균 순응률</div>
+        <div class="card-label">평균 순응률 <span class="hint-wrap"><span class="hint-icon">?</span><span class="hint-bubble">사용일 / 경과일 × 100</span></span></div>
         <div class="card-value success" id="card-avg">-</div>
       </div>
     </div>
@@ -725,7 +725,7 @@ function renderHeatmap() {
 
   const matrix = [];
   const hoverTexts = [];
-  const yLabels = rows.map(r => r.start_str ? `${r.subject_id} (${r.start_str})` : r.subject_id);
+  const yLabels = rows.map(r => r.subject_id);
 
   rows.forEach(r => {
     const rowVals  = [];
@@ -741,17 +741,17 @@ function renderHeatmap() {
 
       if (d >= r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미경과`);
+        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
           const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
           return `${masked} (${e.kstTime} KST)`;
         }).join(", ");
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidLines}`);
+        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidLines}`);
       } else {
         rowVals.push(0);
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미사용`);
+        rowHover.push(`${r.subject_id} (시작: ${r.start_str || '?'}) | ${label}일차 (${dateStr}) | 미사용`);
       }
     }
     matrix.push(rowVals);
@@ -780,7 +780,7 @@ function renderHeatmap() {
     hovertemplate: "%{text}<extra></extra>",
     xgap: 2, ygap: 2,
   }], {
-    margin: {l: 160, r: 20, t: 40, b: 60},
+    margin: {l: 100, r: 20, t: 40, b: 60},
     height,
     xaxis: { side: "top", title: "처방 일차" },
     yaxis: { autorange: "reversed" },
