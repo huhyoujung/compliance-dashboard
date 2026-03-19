@@ -170,6 +170,10 @@
         <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">평균 사용률 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">사용일 / 경과일 × 100</span></span></div>
         <div class="text-3xl font-bold tracking-tight text-emerald-600" id="card-avg">-</div>
       </div>
+      <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">평균 주당 순응도 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">주 3회 이상 → 100% | 미만 → 사용횟수/3×100</span></span></div>
+        <div class="text-3xl font-bold tracking-tight text-blue-600" id="card-weekly-avg">-</div>
+      </div>
     </div>
 
     <!-- 탭 -->
@@ -191,6 +195,7 @@
               <th onclick="sortTable('elapsed_days')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">경과일 ↕</th>
               <th onclick="sortTable('used_days')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용일 ↕</th>
               <th onclick="sortTable('compliance')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용률(%) ↕</th>
+              <th onclick="sortTable('weekly_compliance')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">주당 순응도(%) ↕ <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-0.5 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">주 3회 이상 사용 → 100% | 미만 → 사용횟수/3×100</span></span></th>
               <th onclick="sortTable('yellow_cards')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">옐로카드 ↕</th>
             </tr>
           </thead>
@@ -334,6 +339,33 @@ function calcCompliance(usedDays, elapsedDays) {
   return Math.min((usedDays / elapsedDays) * 100, 100);
 }
 
+/**
+ * 주당 순응도 계산: 주 3회 이상 사용 시 100%, 미만 시 (사용횟수/3)*100
+ * @param {Object} sessions - { dayNum: [sessionEntries] }
+ * @param {number} elapsedDays - 경과일 (0~28)
+ * @returns {number|null} 평균 주당 순응도 (%) 또는 null
+ */
+function calcWeeklyCompliance(sessions, elapsedDays) {
+  if (elapsedDays === 0) return null;
+  const sessionDayNums = new Set(Object.keys(sessions).map(Number));
+  const weeklyScores = [];
+  for (let w = 0; w < 4; w++) {
+    const weekStart = w * 7;
+    const weekEnd = weekStart + 7;
+    // 해당 주가 아직 시작되지 않았으면 스킵
+    if (elapsedDays <= weekStart) break;
+    // 해당 주 내에서 사용한 일수
+    let usedInWeek = 0;
+    for (let d = weekStart; d < Math.min(weekEnd, elapsedDays); d++) {
+      if (sessionDayNums.has(d)) usedInWeek++;
+    }
+    const score = usedInWeek >= 3 ? 100 : Math.min((usedInWeek / 3) * 100, 100);
+    weeklyScores.push(score);
+  }
+  if (weeklyScores.length === 0) return null;
+  return weeklyScores.reduce((a, b) => a + b, 0) / weeklyScores.length;
+}
+
 // ── Session Attend Record 파싱 ───────────────────────────────────────────
 function parseSessionCsv(csvText) {
   const result = Papa.parse(csvText, { header: false, skipEmptyLines: true });
@@ -436,6 +468,8 @@ function parseCsv(csvText) {
         return usedAtCheckpoint < rule.target ? cnt + 1 : cnt;
       }, 0);
 
+      const weeklyComp = calcWeeklyCompliance(userSessions, elapsed_days);
+
       return {
         subject_id,
         user_id: userId,
@@ -447,6 +481,7 @@ function parseCsv(csvText) {
         used_days,
         elapsed_days,
         compliance: compVal,   // null or 0~100
+        weekly_compliance: weeklyComp, // null or 0~100
         yellow_cards,
         is_ended: !!is_ended,
         sessions: userSessions, // { dayN: [sessionId, ...] }
@@ -535,11 +570,16 @@ function renderCards() {
   const avg = validRows.length
     ? validRows.reduce((s, r) => s + r.compliance, 0) / validRows.length
     : null;
+  const weeklyValidRows = base.filter(r => r.weekly_compliance !== null);
+  const weeklyAvg = weeklyValidRows.length
+    ? weeklyValidRows.reduce((s, r) => s + r.weekly_compliance, 0) / weeklyValidRows.length
+    : null;
 
   document.getElementById("card-total").textContent = total + "명";
   document.getElementById("card-nouse").textContent = noUse + "명";
   document.getElementById("card-yellow").textContent = yellowCount + "명";
   document.getElementById("card-avg").textContent = avg !== null ? avg.toFixed(1) + "%" : "-";
+  document.getElementById("card-weekly-avg").textContent = weeklyAvg !== null ? weeklyAvg.toFixed(1) + "%" : "-";
 }
 
 // ── 테이블 ───────────────────────────────────────────────────────────────
@@ -575,6 +615,8 @@ function renderTable() {
   const tbody = document.getElementById("table-body");
   tbody.innerHTML = rows.map(r => {
     const comp = r.compliance !== null ? r.compliance.toFixed(1) + "%" : "N/A";
+    const wComp = r.weekly_compliance !== null ? r.weekly_compliance.toFixed(1) + "%" : "N/A";
+    const wColor = r.weekly_compliance === null ? '#a3a3a3' : r.weekly_compliance >= 80 ? '#059669' : r.weekly_compliance >= 50 ? '#d97706' : '#dc2626';
     const endedBadge = r.is_ended ? '<span class="text-[10px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-500 ml-1.5 font-medium">종료</span>' : "";
     const bg = rowBgColor(r.yellow_cards);
     const ycDisplay = r.yellow_cards > 0
@@ -588,6 +630,7 @@ function renderTable() {
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.elapsed_days}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.used_days}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${comp}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap font-semibold" style="color:${wColor}">${wComp}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap text-center">${ycDisplay}</td>
     </tr>`;
   }).join("");
@@ -602,8 +645,11 @@ function buildMiniHeatmapHTML(r) {
   const compVal = r.compliance !== null ? r.compliance.toFixed(1) : null;
   const badgeClass = compVal === null ? 'warn' : compVal >= 80 ? 'good' : compVal >= 50 ? 'warn' : 'bad';
   const badgeText = compVal !== null ? compVal + '%' : 'N/A';
+  const wCompVal = r.weekly_compliance !== null ? r.weekly_compliance.toFixed(1) : null;
+  const wBadgeClass = wCompVal === null ? 'warn' : wCompVal >= 80 ? 'good' : wCompVal >= 50 ? 'warn' : 'bad';
+  const wBadgeText = wCompVal !== null ? wCompVal + '%' : 'N/A';
   let header = `<div class="mh-header"><div class="mh-title">${r.subject_id}</div><span class="mh-badge ${badgeClass}">${badgeText}</span></div>`;
-  let meta = `<div class="mh-meta"><span>${r.hospital}</span><span>경과 <strong>${r.elapsed_days}</strong>일</span><span>사용 <strong>${r.used_days}</strong>일</span></div>`;
+  let meta = `<div class="mh-meta"><span>${r.hospital}</span><span>경과 <strong>${r.elapsed_days}</strong>일</span><span>사용 <strong>${r.used_days}</strong>일</span><span>주당 <span class="mh-badge ${wBadgeClass}" style="font-size:11px;padding:1px 6px">${wBadgeText}</span></span></div>`;
   let cells = '';
   // 오늘이 몇 일차인지 계산
   const todayDayNum = r.start_dt ? Math.floor((new Date() - new Date(r.start_dt.getTime())) / 86400000) : -1;
@@ -791,7 +837,7 @@ function renderHospitalChart() {
     if (!hospitalStats[r.hospital]) {
       hospitalStats[r.hospital] = {
         hospital: r.hospital, total: 0, active: 0, ended: 0,
-        noUse: 0, yellowCards: 0, compValues: [], usedDays: [],
+        noUse: 0, yellowCards: 0, compValues: [], usedDays: [], weeklyCompValues: [],
       };
     }
     const s = hospitalStats[r.hospital];
@@ -800,14 +846,16 @@ function renderHospitalChart() {
     if (r.used_days === 0) s.noUse++;
     if (r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
     if (r.compliance !== null) s.compValues.push(r.compliance);
+    if (r.weekly_compliance !== null) s.weeklyCompValues.push(r.weekly_compliance);
     s.usedDays.push(r.used_days);
   });
 
   const stats = Object.values(hospitalStats).map(s => {
     const avg = s.compValues.length ? s.compValues.reduce((a,b) => a + b, 0) / s.compValues.length : 0;
+    const weeklyAvg = s.weeklyCompValues.length ? s.weeklyCompValues.reduce((a,b) => a + b, 0) / s.weeklyCompValues.length : 0;
     const noUseRate = s.total ? (s.noUse / s.total * 100) : 0;
     const avgUsed = s.usedDays.length ? s.usedDays.reduce((a,b) => a + b, 0) / s.usedDays.length : 0;
-    return { ...s, avg, noUseRate, avgUsed };
+    return { ...s, avg, weeklyAvg, noUseRate, avgUsed };
   });
 
   // ── KPI 테이블 ──
@@ -816,7 +864,7 @@ function renderHospitalChart() {
     <thead><tr>
       <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">기관</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">전체</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">사용중</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">만료</th>
       <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">미사용자</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">미사용률</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">옐로카드</th>
-      <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th>
+      <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">주당 순응도</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
       const compColor = s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#d97706" : "#dc2626";
@@ -829,6 +877,7 @@ function renderHospitalChart() {
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.yellowCards > 0 ? '#dc2626' : '#a3a3a3'}">${s.yellowCards}</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.avgUsed.toFixed(1)}일</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-bold" style="color:${compColor}">${s.avg.toFixed(1)}%</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-bold" style="color:${s.weeklyAvg >= 80 ? '#2563eb' : s.weeklyAvg >= 50 ? '#d97706' : '#dc2626'}">${s.weeklyAvg.toFixed(1)}%</td>
       </tr>`;
     }).join("")}</tbody>
   </table>`;
