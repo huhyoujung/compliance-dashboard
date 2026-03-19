@@ -64,19 +64,23 @@ def load_data():
     used_days_counter = {}  # user_id → set of day numbers
     for _, sr in df_sess.iterrows():
         uid = sr["user_id_sess"]
-        date_str = sr["session_day"]
         sid = sr.get("counted_session_id", "")
-        if not isinstance(uid, str) or not isinstance(date_str, str) or not date_str:
+        if not isinstance(uid, str) or not uid:
             continue
         user_start = start_dt_map.get(uid)
         if pd.isna(user_start) or user_start is pd.NaT:
             continue
+        # created_at(UTC) → +9h로 KST 날짜 추출
+        created_at_str = str(sr.get("created_at", "")).strip()
+        if not created_at_str:
+            continue
         try:
-            sess_date = pd.Timestamp(date_str)
+            created_utc = pd.Timestamp(created_at_str)
+            sess_date_kst = created_utc + pd.Timedelta(hours=9)
         except Exception:
             continue
         anchor = pd.Timestamp(user_start.date()) + pd.Timedelta(hours=12)
-        diff = (pd.Timestamp(sess_date.date()) + pd.Timedelta(hours=12) - anchor).total_seconds()
+        diff = (pd.Timestamp(sess_date_kst.date()) + pd.Timedelta(hours=12) - anchor).total_seconds()
         if diff < 0:
             continue
         day_num = int(diff // 86400)

@@ -326,9 +326,14 @@ function parseSessionCsv(csvText) {
   const map = {};  // { user_id: { "2025-03-05": [sessionId, ...] } }
   dataRows.forEach(r => {
     const uid = (r[ci("user_id")] || "").trim();
-    const dayStr = (r[ci("session_day")] || "").trim();
+    const createdAt = (r[ci("created_at")] || "").trim();
     const sid = (r[ci("counted_session_id")] || "").trim();
-    if (!uid || !dayStr) return;
+    if (!uid || !createdAt) return;
+    // created_at은 UTC → +9h로 KST 날짜 추출
+    const utc = new Date(createdAt + "Z");  // UTC 명시
+    if (isNaN(utc)) return;
+    const kst = new Date(utc.getTime() + 9 * 3600000);
+    const dayStr = kst.toISOString().slice(0, 10);  // "YYYY-MM-DD" KST
     if (!map[uid]) map[uid] = {};
     if (!map[uid][dayStr]) map[uid][dayStr] = [];
     if (sid) map[uid][dayStr].push(sid);
