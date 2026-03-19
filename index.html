@@ -233,14 +233,6 @@
         <option value="ended">만료됨</option>
       </select>
       <div class="filter-divider"></div>
-      <label class="filter-chip" id="chip-nouse">
-        <input type="checkbox" id="no-use-only" onchange="toggleChip('chip-nouse'); applyFilters()">
-        미사용자만
-      </label>
-      <span class="hint-wrap">
-        <span class="hint-icon">?</span>
-        <span class="hint-bubble">처방 기간 동안 앱 세션이 0회인 환자</span>
-      </span>
       <label class="filter-chip" id="chip-yellow">
         <input type="checkbox" id="yellow-card-only" onchange="toggleChip('chip-yellow'); applyFilters()">
         옐로카드만
@@ -252,13 +244,6 @@
     </div>
 
     <!-- 요약 카드 -->
-    <div class="sub-tabs" style="margin-bottom:8px">
-      <div class="sub-tab-group">
-        <span class="sub-tab-label">범위:</span>
-        <button class="sub-tab-btn active" onclick="setCardScope('all', this)">전체</button>
-        <button class="sub-tab-btn" onclick="setCardScope('active', this)">사용중</button>
-      </div>
-    </div>
     <div class="cards">
       <div class="card">
         <div class="card-label">전체 대상자</div>
@@ -378,7 +363,7 @@ let sortKey = "yellow_cards";
 let sortAsc = false;
 let lastLoaded = null;
 let sessionMap = {};      // { user_id: { dayN: [sessionId, ...], ... } }
-let cardScope = "all";    // "all" | "active"
+
 let tableStatusTab = "all"; // "all" | "active" | "ended"
 let tableHospitalTab = "all"; // "all" | hospital name
 
@@ -502,10 +487,12 @@ function parseCsv(csvText) {
 
       const is_ended = end_dt && end_dt < now;
 
-      // 옐로카드: 체크포인트별 목표 미달 누적
+      // 옐로카드: 체크포인트별 목표 미달 누적 (해당 시점까지의 누적 사용일 기준)
+      const sessionDayNums = Object.keys(userSessions).map(Number);
       const yellow_cards = YELLOW_CARD_RULES.reduce((cnt, rule) => {
         if (elapsed_days < rule.day) return cnt;  // 아직 미도달
-        return used_days < rule.target ? cnt + 1 : cnt;
+        const usedAtCheckpoint = sessionDayNums.filter(d => d < rule.day).length;
+        return usedAtCheckpoint < rule.target ? cnt + 1 : cnt;
       }, 0);
 
       return {
@@ -578,7 +565,6 @@ function toggleChip(chipId) {
 function applyFilters() {
   const hospitalVal = document.getElementById("hospital-filter").value;
   const statusVal = document.getElementById("status-filter").value;
-  const noUseOnly = document.getElementById("no-use-only").checked;
   const yellowOnly = document.getElementById("yellow-card-only").checked;
 
   tableStatusTab = statusVal;
@@ -588,7 +574,6 @@ function applyFilters() {
     if (hospitalVal !== "all" && r.hospital !== hospitalVal) return false;
     if (statusVal === "active" && r.is_ended) return false;
     if (statusVal === "ended" && !r.is_ended) return false;
-    if (noUseOnly && r.used_days > 0) return false;
     if (yellowOnly && r.yellow_cards === 0) return false;
     return true;
   });
@@ -600,19 +585,9 @@ function applyFilters() {
   renderHospitalChart();
 }
 
-// ── 카드 스코프 토글 ──────────────────────────────────────────────────────
-function setCardScope(scope, btn) {
-  cardScope = scope;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderCards();
-}
-
 // ── 요약 카드 ────────────────────────────────────────────────────────────
 function renderCards() {
-  const base = cardScope === "active"
-    ? filteredRows.filter(r => !r.is_ended)
-    : filteredRows;
+  const base = filteredRows;
   const total = base.length;
   const noUse = base.filter(r => r.used_days === 0).length;
   const yellowCount = base.filter(r => r.yellow_cards > 0 && !r.is_ended).length;
@@ -621,8 +596,7 @@ function renderCards() {
     ? validRows.reduce((s, r) => s + r.compliance, 0) / validRows.length
     : null;
 
-  const scopeLabel = cardScope === "active" ? " (사용중)" : "";
-  document.getElementById("card-total").textContent = total + "명" + scopeLabel;
+  document.getElementById("card-total").textContent = total + "명";
   document.getElementById("card-nouse").textContent = noUse + "명";
   document.getElementById("card-yellow").textContent = yellowCount + "명";
   document.getElementById("card-avg").textContent = avg !== null ? avg.toFixed(1) + "%" : "-";
