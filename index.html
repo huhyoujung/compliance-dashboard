@@ -1014,26 +1014,35 @@ function renderHospitalChart() {
     bargap: 0.35,
   }, { responsive: true });
 
-  // ── 기관별 바이올린 플롯 ──
-  const boxTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => {
-    const baseColor = s.avg < 50 ? "#f472b6" : "#a3a3a3";
-    const fillAlpha = s.avg < 50 ? "rgba(244,114,182,0.15)" : "rgba(163,163,163,0.15)";
-    return {
-      type: "box",
+  // ── 기관별 사용률 분포 (스트립 차트) ──
+  const sortedStats = [...stats].sort((a,b) => a.avg - b.avg);
+  const stripTraces = [];
+  sortedStats.forEach(s => {
+    const dotColor = s.avg < 50 ? "#f472b6" : "#a3a3a3";
+    stripTraces.push({
+      type: "scatter",
+      mode: "markers",
+      x: s.compValues.map(() => s.hospital.replace(/대학교/g, "대")),
       y: s.compValues,
       name: s.hospital.replace(/대학교/g, "대"),
-      line: { color: baseColor, width: 1.5 },
-      fillcolor: fillAlpha,
-      marker: { color: baseColor, size: 6, opacity: 0.8 },
-      boxpoints: "all",
-      jitter: 0.4,
-      pointpos: -1.5,
-      boxmean: true,
+      marker: { color: dotColor, size: 10, opacity: 0.7, line: { color: "white", width: 1.5 } },
       hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
-    };
+      showlegend: false,
+    });
   });
+  const avgShapes = sortedStats.map((s, i) => ({
+    type: "line", x0: i - 0.3, x1: i + 0.3, y0: s.avg, y1: s.avg,
+    xref: "x", yref: "y",
+    line: { color: s.avg < 50 ? "#f472b6" : "#737373", width: 2.5 },
+  }));
+  const avgAnnotations = sortedStats.map((s, i) => ({
+    x: i, y: s.avg, xref: "x", yref: "y",
+    text: `avg ${s.avg.toFixed(0)}%`, showarrow: false,
+    font: { size: 10, color: s.avg < 50 ? "#f472b6" : "#737373", family: "Inter, system-ui, sans-serif" },
+    xanchor: "center", yanchor: "bottom", yshift: 8,
+  }));
 
-  Plotly.newPlot("hospital-box-chart", boxTraces, {
+  Plotly.newPlot("hospital-box-chart", stripTraces, {
     title: { text: "사용률 분포", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
     yaxis: {
       title: { text: "사용률(%)", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
@@ -1046,7 +1055,10 @@ function renderHospitalChart() {
     xaxis: {
       tickfont: { family: "Inter, system-ui, sans-serif", size: 10, color: "#525252" },
       linecolor: "#e5e5e5",
+      type: "category",
     },
+    shapes: avgShapes,
+    annotations: avgAnnotations,
     margin: { l: 55, r: 20, t: 50, b: 90 },
     height: Math.max(320, entries.length * 55),
     showlegend: false,
