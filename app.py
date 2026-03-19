@@ -8,6 +8,7 @@ st.set_page_config(page_title="순응률 대시보드", page_icon="💊", layout
 
 SHEET_ID = "1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+SESSION_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=12940537"
 
 
 # ── 데이터 로드 ───────────────────────────────────────────────────────────────
@@ -40,8 +41,33 @@ def load_data():
     df["content"]      = df_raw["환자컨텐츠"].str.strip()
     df["hospital"]     = df_raw["소속기관"].str.strip()
     df["start_dt"]     = pd.to_datetime(df_raw["시작일자"], errors="coerce")
-    df["end_dt"]       = pd.to_datetime(df_raw["종료일자"], errors="coerce")
-    df["used_days"]    = pd.to_numeric(df_raw["사용일차"], errors="coerce").fillna(0).astype(int)
+    # 종료일 = 시작일 + 28일, 11:59:59
+    df["end_dt"]       = df["start_dt"] + pd.Timedelta(days=28)
+    df["end_dt"]       = df["end_dt"].apply(
+        lambda x: x.replace(hour=11, minute=59, second=59) if pd.notna(x) else x
+    )
+
+    # Session Attend Record 가져오기
+    try:
+        df_sess = pd.read_csv(SESSION_URL, dtype=str)
+        df_sess.columns = df_sess.columns.str.strip()
+        df_sess["session_day"] = pd.to_numeric(df_sess["session_day"], errors="coerce")
+        df_sess["user_id_sess"] = df_sess["user_id"].str.strip()
+    except Exception:
+        df_sess = pd.DataFrame(columns=["user_id_sess", "session_day", "counted_session_id"])
+
+    # 세션 기반 사용일 수
+    session_day_counts = df_sess.groupby("user_id_sess")["session_day"].nunique()
+    df["used_days"] = df["user_id"].map(session_day_counts).fillna(0).astype(int)
+
+    # 세션 맵: user_id → { day: [session_id, ...] }
+    session_map = {}
+    for _, sr in df_sess.iterrows():
+        uid = sr["user_id_sess"]
+        day = sr["session_day"]
+        sid = sr.get("counted_session_id", "")
+        if pd.notna(day):
+            session_map.setdefault(uid, {}).setdefault(int(day), []).append(str(sid).strip() if pd.notna(sid) else "")
 
     def make_subject_id(row):
         prefix = HOSPITAL_PREFIX.get(row["hospital"])
@@ -103,10 +129,7 @@ def load_data():
     # 처방 종료 여부
     df["is_ended"] = df["end_dt"].notna() & (df["end_dt"] < now)
 
-    # 히트맵용: 시트에 일별 세션 기록이 없으므로 빈 DataFrame 반환
-    df_sessions = pd.DataFrame(columns=["user_id", "session_day"])
-
-    return df, df_sessions
+    return df, session_map
 
 
 # ── 색상 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -126,12 +149,11 @@ def compliance_row_color(val):
 
 # ── 차트 함수들 ───────────────────────────────────────────────────────────────
 
-def render_heatmap(df: pd.DataFrame, df_sessions: pd.DataFrame):
+def render_heatmap(df: pd.DataFrame, session_map: dict):
     if df.empty:
         st.info("표시할 데이터가 없습니다.")
         return
 
-    today = pd.Timestamp(date.today())
     max_days = 28
 
     # 피험자번호 기준 정렬
@@ -143,27 +165,27 @@ def render_heatmap(df: pd.DataFrame, df_sessions: pd.DataFrame):
 
     for _, row_info in df_sorted.iterrows():
         subject_id   = row_info["subject_id"]
+        user_id      = row_info["user_id"]
         start        = row_info["start_dt"]
-        end          = row_info["end_dt"]
-        elapsed      = int(row_info["elapsed_days"])   # 오늘까지 경과일
-        used         = int(row_info["used_days"])       # 누적 사용일
+        elapsed      = int(row_info["elapsed_days"])
+        sess         = session_map.get(user_id, {})
 
-        # 경과일 중 사용일차는 앞에서부터 채움 (정확한 날짜 불명이므로 근사)
         row_vals  = []
         row_hover = []
         for d in range(1, max_days + 1):
             day_dt   = start + pd.Timedelta(days=d - 1)
             date_str = day_dt.strftime("%Y-%m-%d")
+            day_sessions = sess.get(d, [])
+            has_session = len(day_sessions) > 0
+
             if d > elapsed:
-                # 아직 경과하지 않은 미래
                 row_vals.append(2)
                 row_hover.append(f"{subject_id} | {d}일차({date_str}) | 미경과")
-            elif d <= used:
-                # 경과한 날 중 사용
+            elif has_session:
                 row_vals.append(1)
-                row_hover.append(f"{subject_id} | {d}일차({date_str}) | 사용")
+                sid_str = ", ".join(day_sessions)
+                row_hover.append(f"{subject_id} | {d}일차({date_str}) | 사용<br>세션: {sid_str}")
             else:
-                # 경과했지만 미사용
                 row_vals.append(0)
                 row_hover.append(f"{subject_id} | {d}일차({date_str}) | 미사용")
 
@@ -173,21 +195,12 @@ def render_heatmap(df: pd.DataFrame, df_sessions: pd.DataFrame):
 
     x_labels = [str(d) for d in range(1, max_days + 1)]
 
-    # 오늘 일차: 각 환자마다 다르지만, 필터된 그룹의 대표값(첫 번째 환자 기준)으로 세로선 표시
-    # 세로선 위치: elapsed_days 에 해당하는 x 인덱스 (0-based)
-    # 공통 오늘선: 가장 많이 해당하는 경과일 사용
-    today_day_marker = None
-    if not df_sorted.empty:
-        # 처방 시작일이 가장 이른 환자 기준으로 현재 일차 계산 (대표값)
-        ref_elapsed = int(df_sorted["elapsed_days"].median())
-        today_day_marker = min(ref_elapsed, max_days)
-
     colorscale = [
-        [0.0,  "#FF6B6B"],   # 0: 미사용 (빨강)
+        [0.0,  "#FF6B6B"],
         [0.33, "#FF6B6B"],
-        [0.34, "#28A745"],   # 1: 사용 (초록)
+        [0.34, "#28A745"],
         [0.67, "#28A745"],
-        [0.67, "#E8E8E8"],   # 2: 미경과 (연회색)
+        [0.67, "#E8E8E8"],
         [1.0,  "#E8E8E8"],
     ]
 
@@ -206,18 +219,6 @@ def render_heatmap(df: pd.DataFrame, df_sessions: pd.DataFrame):
             ygap=2,
         )
     )
-
-    # 오늘 일차 세로선
-    if today_day_marker and 1 <= today_day_marker <= max_days:
-        fig.add_vline(
-            x=today_day_marker - 0.5,
-            line_color="#1A73E8",
-            line_width=2,
-            line_dash="dash",
-            annotation_text=f"오늘 ({today.strftime('%m/%d')})",
-            annotation_position="top",
-            annotation_font_color="#1A73E8",
-        )
 
     height = max(300, len(y_labels) * 36 + 80)
     fig.update_layout(
@@ -292,38 +293,113 @@ def render_hospital_chart(df: pd.DataFrame):
         st.info("표시할 데이터가 없습니다.")
         return
 
-    summary = (
-        df_valid.groupby("hospital")
-        .agg(avg_compliance=("compliance", "mean"), count=("user_id", "count"))
-        .reset_index()
-        .sort_values("avg_compliance")
-    )
-    summary = summary[summary["count"] >= 1]
+    # ── 기관별 상세 통계 ──
+    hospital_stats = []
+    for hosp, grp in df.groupby("hospital"):
+        total = len(grp)
+        active = (grp["is_ended"] == False).sum()
+        ended = (grp["is_ended"] == True).sum()
+        no_use = (grp["used_days"] == 0).sum()
+        no_use_rate = no_use / total * 100 if total else 0
+        avg_used = grp["used_days"].mean()
+        grp_valid = grp[grp["compliance"].notna()]
+        avg_comp = grp_valid["compliance"].mean() if len(grp_valid) else 0
+        yellow_cnt = ((grp.get("yellow_cards", pd.Series(dtype=int)) > 0) & (~grp["is_ended"])).sum() if "yellow_cards" in grp.columns else 0
+        hospital_stats.append({
+            "기관": hosp, "전체": total, "사용중": int(active), "만료": int(ended),
+            "미사용자": int(no_use), "미사용률(%)": round(no_use_rate, 1),
+            "옐로카드": int(yellow_cnt), "평균 사용일": round(avg_used, 1),
+            "평균 순응률(%)": round(avg_comp, 1),
+        })
 
-    y_labels = [
-        f"{row['hospital']} ({row['count']}명)" for _, row in summary.iterrows()
-    ]
-    colors = [
-        "#28A745" if v >= 80 else "#4A90D9" for v in summary["avg_compliance"]
-    ]
+    stats_df = pd.DataFrame(hospital_stats).sort_values("평균 순응률(%)")
 
-    fig = go.Figure(
-        go.Bar(
-            x=summary["avg_compliance"].round(1),
-            y=y_labels,
-            orientation="h",
-            marker_color=colors,
-            text=summary["avg_compliance"].round(1).astype(str) + "%",
-            textposition="outside",
+    # ── 인사이트 카드 ──
+    avg_all = df_valid["compliance"].mean()
+    insights = []
+
+    # 최하위 기관
+    worst = stats_df.iloc[0]
+    if worst["평균 순응률(%)"] < avg_all:
+        insights.append(f"⚠️ **{worst['기관']}** 평균 순응률 **{worst['평균 순응률(%)']}%** — 전체 평균({avg_all:.1f}%) 대비 {avg_all - worst['평균 순응률(%)']:.1f}%p 낮음")
+
+    # 미사용률 높은 기관
+    high_nouse = stats_df[stats_df["미사용률(%)"] > 20].sort_values("미사용률(%)", ascending=False)
+    for _, row in high_nouse.iterrows():
+        insights.append(f"🚨 **{row['기관']}** 미사용률 **{row['미사용률(%)']}%** ({row['미사용자']}/{row['전체']}명)")
+
+    # 우수 기관
+    best = stats_df.iloc[-1]
+    if best["평균 순응률(%)"] > avg_all and len(stats_df) > 1:
+        insights.append(f"🏆 **{best['기관']}** 평균 순응률 **{best['평균 순응률(%)']}%**로 최우수")
+
+    # 기관 간 편차
+    gap = stats_df["평균 순응률(%)"].max() - stats_df["평균 순응률(%)"].min()
+    if gap > 20 and len(stats_df) >= 2:
+        insights.append(f"📊 기관 간 순응률 편차 **{gap:.1f}%p** — 하위 기관 사용 독려 필요")
+
+    if insights:
+        st.subheader("💡 기관별 인사이트")
+        for ins in insights:
+            st.markdown(ins)
+        st.divider()
+
+    # ── KPI 테이블 ──
+    st.subheader("📊 기관별 KPI")
+    st.dataframe(stats_df.reset_index(drop=True), use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    # ── 차트: 평균 순응률 + 박스플롯 ──
+    col_bar, col_box = st.columns(2)
+
+    with col_bar:
+        summary = stats_df.copy()
+        y_labels = [f"{row['기관']} ({row['전체']}명)" for _, row in summary.iterrows()]
+        colors = [
+            "#28A745" if v >= 80 else "#4A90D9" if v >= 50 else "#FF6B6B"
+            for v in summary["평균 순응률(%)"]
+        ]
+
+        fig = go.Figure(
+            go.Bar(
+                x=summary["평균 순응률(%)"],
+                y=y_labels,
+                orientation="h",
+                marker_color=colors,
+                text=summary["평균 순응률(%)"].astype(str) + "%",
+                textposition="outside",
+            )
         )
-    )
-    fig.update_layout(
-        xaxis_title="평균 순응률(%)",
-        xaxis=dict(range=[0, 110]),
-        margin=dict(l=0, r=60, t=30, b=0),
-        height=max(300, len(summary) * 40),
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            title="평균 순응률",
+            xaxis_title="순응률(%)",
+            xaxis=dict(range=[0, 115]),
+            margin=dict(l=0, r=60, t=40, b=0),
+            height=max(300, len(summary) * 44),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_box:
+        fig = go.Figure()
+        for hosp in stats_df["기관"]:
+            grp_valid = df_valid[df_valid["hospital"] == hosp]
+            color = "#28A745" if grp_valid["compliance"].mean() >= 80 else "#4A90D9" if grp_valid["compliance"].mean() >= 50 else "#FF6B6B"
+            fig.add_trace(go.Box(
+                y=grp_valid["compliance"],
+                name=hosp.replace("대학교", "대"),
+                marker_color=color,
+                boxpoints="all", jitter=0.4, pointpos=0,
+            ))
+        fig.update_layout(
+            title="순응률 분포",
+            yaxis_title="순응률(%)",
+            yaxis=dict(range=[-5, 110]),
+            showlegend=False,
+            margin=dict(l=0, r=0, t=40, b=0),
+            height=max(300, len(stats_df) * 44),
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 
 # ── 메인 앱 ───────────────────────────────────────────────────────────────────
@@ -344,7 +420,7 @@ with st.sidebar:
 # 데이터 로드
 with st.spinner("데이터를 불러오는 중..."):
     try:
-        df, df_sessions = load_data()
+        df, session_map = load_data()
     except Exception as e:
         st.error(f"데이터 로드 실패: {e}")
         st.stop()
@@ -418,7 +494,10 @@ with tab1:
         st.caption(f"총 {len(display)}명 표시 중")
 
 with tab2:
-    render_heatmap(df_view, df_sessions)
+    # session_map에서 df_view에 해당하는 user_id만 필터
+    view_user_ids = set(df_view["user_id"].tolist())
+    view_session_map = {k: v for k, v in session_map.items() if k in view_user_ids}
+    render_heatmap(df_view, view_session_map)
 
 with tab3:
     render_distribution(df_view)
