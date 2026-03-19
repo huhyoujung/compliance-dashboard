@@ -206,7 +206,7 @@ def render_heatmap(df: pd.DataFrame, session_map: dict):
                 row_hover.append(f"{subject_id} | {label}일차({date_str}) | 미경과")
             elif has_session:
                 row_vals.append(1)
-                sid_str = ", ".join(day_sessions)
+                sid_str = ", ".join("*****" + s[5:] if s.startswith("sham") else s for s in day_sessions)
                 row_hover.append(f"{subject_id} | {label}일차({date_str}) | 사용<br>세션: {sid_str}")
             else:
                 row_vals.append(0)
