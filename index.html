@@ -666,6 +666,7 @@ function positionTooltip(e, el) {
 
 // ── 히트맵 ───────────────────────────────────────────────────────────────
 function renderHeatmap() {
+  const now = new Date();
   const rows = [...filteredRows].sort((a, b) => a.subject_id.localeCompare(b.subject_id));
   if (!rows.length) {
     Plotly.purge("heatmap-chart");
