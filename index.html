@@ -946,25 +946,28 @@ function renderHospitalChart() {
     bargap: 0.35,
   }, { responsive: true });
 
-  // ── 기관별 박스플롯 ──
-  const boxTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => ({
-    type: "box",
-    y: s.compValues,
-    name: s.hospital.replace(/대학교/g, "대"),
-    marker: {
-      color: s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#525252" : "#dc2626",
-      size: 5,
-      opacity: 0.7,
-    },
-    line: { width: 1.5 },
-    fillcolor: s.avg >= 80 ? "rgba(52,211,153,0.08)" : s.avg >= 50 ? "rgba(82,82,82,0.08)" : "rgba(220,38,38,0.08)",
-    boxpoints: "all",
-    jitter: 0.4,
-    pointpos: 0,
-    hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
-  }));
+  // ── 기관별 바이올린 플롯 ──
+  const violinTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => {
+    const baseColor = s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#525252" : "#dc2626";
+    const fillAlpha = s.avg >= 80 ? "rgba(52,211,153,0.15)" : s.avg >= 50 ? "rgba(82,82,82,0.15)" : "rgba(220,38,38,0.15)";
+    return {
+      type: "violin",
+      y: s.compValues,
+      name: s.hospital.replace(/대학교/g, "대"),
+      box: { visible: true, width: 0.15 },
+      meanline: { visible: true },
+      line: { color: baseColor, width: 1.5 },
+      fillcolor: fillAlpha,
+      marker: { color: baseColor, size: 4, opacity: 0.6 },
+      points: "all",
+      jitter: 0.3,
+      pointpos: -1.5,
+      spanmode: "hard",
+      hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
+    };
+  });
 
-  Plotly.newPlot("hospital-box-chart", boxTraces, {
+  Plotly.newPlot("hospital-box-chart", violinTraces, {
     title: { text: "사용률 분포", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
     yaxis: {
       title: { text: "사용률(%)", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
