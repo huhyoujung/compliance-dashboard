@@ -576,7 +576,9 @@ function renderCards() {
     : null;
   document.getElementById("card-total").textContent = total + "명";
   document.getElementById("card-nouse").textContent = noUse + "명";
+  document.getElementById("card-nouse").className = `text-3xl font-bold tracking-tight ${noUse === 0 ? "text-neutral-900" : "text-red-600"}`;
   document.getElementById("card-yellow").textContent = yellowCount + "명";
+  document.getElementById("card-yellow").className = `text-3xl font-bold tracking-tight ${yellowCount === 0 ? "text-neutral-900" : "text-red-600"}`;
   document.getElementById("card-avg").textContent = avg !== null ? avg.toFixed(1) + "%" : "-";
 }
 
