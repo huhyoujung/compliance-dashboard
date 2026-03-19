@@ -188,7 +188,7 @@
     </div>
 
     <!-- 탭 -->
-    <div class="tabs">
+    <div class="tabs" id="main-tabs">
       <button class="tab-btn active" onclick="switchTab('table', this)">📋 환자 테이블</button>
       <button class="tab-btn" onclick="switchTab('heatmap', this)">🗓 일별 히트맵</button>
       <button class="tab-btn" onclick="switchTab('dist', this)">📊 순응률 분포</button>
@@ -913,7 +913,7 @@ function switchTab(name, btn) {
   TAB_IDS.forEach(id => {
     document.getElementById(`tab-${id}`).style.display = id === name ? "" : "none";
   });
-  document.querySelectorAll(".tabs:first-of-type .tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#main-tabs .tab-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
 
   // 탭 전환 시 차트 재렌더 (Plotly responsive 갱신)
