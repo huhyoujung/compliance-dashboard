@@ -53,8 +53,10 @@ async function takeScreenshots() {
     console.log("✅ 환자 테이블 스크린샷:", tablePath);
   }
 
-  // 5) 일별 히트맵 탭 클릭 → 스크린샷
+  // 5) 일별 히트맵 탭 클릭 → Plotly 렌더링 완료 대기 → 스크린샷
   await page.click('button:has-text("일별 히트맵")');
+  // Plotly 히트맵이 실제로 렌더링될 때까지 대기 (.plot-container가 나타남)
+  await page.waitForSelector("#tab-heatmap .plot-container", { timeout: 15000 });
   await page.waitForTimeout(2000);
   await page.mouse.move(0, 0);
   await page.waitForTimeout(300);
