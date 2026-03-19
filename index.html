@@ -164,7 +164,7 @@
         <div class="text-3xl font-bold tracking-tight" id="card-total">-</div>
       </div>
       <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
-        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">미사용자 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">처방 기간 동안 앱 세션이 0회인 환자</span></span></div>
+        <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">미사용자 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">처방 기간 동안 앱 세션이 0회인 환자 (당일 가입자 제외)</span></span></div>
         <div class="text-3xl font-bold tracking-tight text-red-600" id="card-nouse">-</div>
       </div>
       <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
@@ -569,7 +569,7 @@ function applyFilters() {
 function renderCards() {
   const base = filteredRows;
   const total = base.length;
-  const noUse = base.filter(r => r.used_days === 0).length;
+  const noUse = base.filter(r => r.used_days === 0 && r.elapsed_days > 1).length;
   const yellowCount = base.filter(r => r.yellow_cards > 0 && !r.is_ended).length;
   const validRows = base.filter(r => r.elapsed_days > 0 && r.compliance !== null);
   const avg = validRows.length
@@ -852,7 +852,7 @@ function renderHospitalChart() {
     const s = hospitalStats[r.hospital];
     s.total++;
     if (r.is_ended) s.ended++; else s.active++;
-    if (r.used_days === 0) s.noUse++;
+    if (r.used_days === 0 && r.elapsed_days > 1) s.noUse++;
     if (r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
     if (r.compliance !== null) s.compValues.push(r.compliance);
     s.usedDays.push(r.used_days);

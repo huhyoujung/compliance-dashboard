@@ -344,7 +344,7 @@ def render_hospital_chart(df: pd.DataFrame):
         total = len(grp)
         active = (grp["is_ended"] == False).sum()
         ended = (grp["is_ended"] == True).sum()
-        no_use = (grp["used_days"] == 0).sum()
+        no_use = ((grp["used_days"] == 0) & (grp["elapsed_days"] > 1)).sum()
         no_use_rate = no_use / total * 100 if total else 0
         avg_used = grp["used_days"].mean()
         grp_valid = grp[grp["compliance"].notna()]
@@ -486,11 +486,11 @@ df_view = df.copy()
 if hospital_filter:  # 빈 선택 = 전체
     df_view = df_view[df_view["hospital"].isin(hospital_filter)]
 if show_no_use:
-    df_view = df_view[df_view["used_days"] == 0]
+    df_view = df_view[(df_view["used_days"] == 0) & (df_view["elapsed_days"] > 1)]
 
 # ── 요약 카드 ─────────────────────────────────────────────────────────────────
 total = len(df_view)
-no_use_cnt = (df_view["used_days"] == 0).sum()
+no_use_cnt = ((df_view["used_days"] == 0) & (df_view["elapsed_days"] > 1)).sum()
 avg_comp = df_view[df_view["elapsed_days"] > 0]["compliance"].mean()
 
 c1, c2, c3 = st.columns(3)
