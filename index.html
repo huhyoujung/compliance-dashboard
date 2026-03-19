@@ -695,7 +695,8 @@ function renderHeatmap() {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
           const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
-          return `🔑 ${masked} (${e.kstTime || ''} KST)`;
+          const dateTag = e.kstDate ? e.kstDate.slice(5).replace('-', '/') : '';
+          return `🔑 ${masked} (${dateTag} ${e.kstTime || ''} KST)`;
         }).join("<br>");
         rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dateStr})<br>✅ 사용<br>${sidLines}`);
       } else {
