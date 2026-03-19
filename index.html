@@ -13,29 +13,29 @@
 
   <style>
     :root {
-      --c-bg: #f8fafc;
+      --c-bg: #fafafa;
       --c-surface: #ffffff;
-      --c-border: #e2e8f0;
-      --c-border-light: #f1f5f9;
-      --c-text: #0f172a;
-      --c-text-secondary: #64748b;
-      --c-text-muted: #94a3b8;
-      --c-primary: #6366f1;
-      --c-primary-hover: #4f46e5;
-      --c-primary-light: #eef2ff;
-      --c-primary-border: #c7d2fe;
-      --c-danger: #ef4444;
+      --c-border: #e5e5e5;
+      --c-border-light: #f5f5f5;
+      --c-text: #171717;
+      --c-text-secondary: #525252;
+      --c-text-muted: #a3a3a3;
+      --c-primary: #171717;
+      --c-primary-hover: #000000;
+      --c-primary-light: #f5f5f5;
+      --c-primary-border: #d4d4d4;
+      --c-danger: #dc2626;
       --c-danger-bg: #fef2f2;
-      --c-warning: #f59e0b;
+      --c-warning: #d97706;
       --c-warning-bg: #fffbeb;
-      --c-success: #10b981;
+      --c-success: #059669;
       --c-success-bg: #ecfdf5;
-      --c-green: #22c55e;
-      --c-red: #f87171;
-      --c-gray: #e2e8f0;
-      --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-      --shadow-md: 0 2px 8px rgba(0,0,0,.06);
-      --shadow-lg: 0 4px 24px rgba(0,0,0,.1);
+      --c-green: #34d399;
+      --c-red: #fca5a5;
+      --c-gray: #e5e5e5;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 2px 8px rgba(0,0,0,.08);
+      --shadow-lg: 0 4px 24px rgba(0,0,0,.12);
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
@@ -59,15 +59,15 @@
     .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); }
     .filter-bar .filter-label { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
     .filter-bar select { border: 1px solid var(--c-border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--c-surface); color: var(--c-text); cursor: pointer; }
-    .filter-bar select:focus { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    .filter-bar select:focus { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
     .filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border: 1px solid var(--c-border); border-radius: 20px; background: var(--c-surface); font-size: 12px; cursor: pointer; color: var(--c-text-secondary); transition: all .15s; font-weight: 500; user-select: none; }
     .filter-chip:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
-    .filter-chip.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); font-weight: 600; }
+    .filter-chip.active { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
     .filter-chip input[type="checkbox"] { display: none; }
     .filter-divider { width: 1px; height: 24px; background: var(--c-border); margin: 0 4px; }
     .hint-wrap { position: relative; display: inline-flex; align-items: center; }
     .hint-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--c-border); font-size: 10px; font-weight: 700; color: var(--c-text-muted); cursor: help; margin-left: 4px; flex-shrink: 0; transition: all .15s; }
-    .hint-icon:hover { background: var(--c-primary); color: #fff; border-color: var(--c-primary); }
+    .hint-icon:hover { background: var(--c-text); color: #fff; border-color: var(--c-text); }
     .hint-bubble { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--c-text); color: #fff; font-size: 12px; font-weight: 400; padding: 8px 12px; border-radius: 8px; white-space: nowrap; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.15); line-height: 1.5; }
     .hint-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--c-text); }
     .hint-icon:hover + .hint-bubble { display: block; }
@@ -114,14 +114,14 @@
     .sub-tab-group { display: flex; align-items: center; gap: 6px; }
     .sub-tab-label { font-size: 12px; color: var(--c-text-muted); margin-right: 2px; font-weight: 500; }
     .sub-tab-btn { padding: 5px 14px; border: 1px solid var(--c-border); border-radius: 20px; background: var(--c-surface); font-size: 12px; cursor: pointer; color: var(--c-text-secondary); transition: all .15s; font-weight: 500; }
-    .sub-tab-btn:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
-    .sub-tab-btn.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); font-weight: 600; }
+    .sub-tab-btn:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-text); }
+    .sub-tab-btn.active { background: var(--c-text); color: #fff; border-color: var(--c-text); font-weight: 600; }
 
     /* ── 테이블 ── */
     .table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--c-border); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--c-surface); }
     th { background: var(--c-border-light); padding: 12px 14px; text-align: left; font-weight: 600; color: var(--c-text-secondary); border-bottom: 1px solid var(--c-border); white-space: nowrap; cursor: pointer; user-select: none; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
-    th:hover { background: var(--c-primary-light); }
+    th:hover { background: #f0f0f0; }
     td { padding: 11px 14px; border-bottom: 1px solid var(--c-border-light); white-space: nowrap; color: var(--c-text); }
     tr:last-child td { border-bottom: none; }
     .badge-ended { font-size: 10px; background: var(--c-border); padding: 2px 8px; border-radius: 10px; color: var(--c-text-secondary); margin-left: 6px; font-weight: 500; }
@@ -132,7 +132,7 @@
     .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
 
     /* ── 설명 박스 ── */
-    .tab-desc { background: var(--c-border-light); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--c-text-secondary); line-height: 1.6; border-left: 3px solid var(--c-primary); }
+    .tab-desc { background: var(--c-border-light); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 16px; font-size: 13px; color: var(--c-text-secondary); line-height: 1.6; border-left: 3px solid var(--c-text); }
 
     /* ── 인사이트 ── */
     .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
@@ -171,22 +171,22 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 9px; font-weight: 600; color: #fff;
     }
-    #mini-heatmap .mh-cell.used { background: var(--c-green); }
-    #mini-heatmap .mh-cell.unused { background: var(--c-red); }
-    #mini-heatmap .mh-cell.future { background: var(--c-gray); color: var(--c-text-muted); }
+    #mini-heatmap .mh-cell.used { background: #171717; }
+    #mini-heatmap .mh-cell.unused { background: #fca5a5; color: #171717; }
+    #mini-heatmap .mh-cell.future { background: #f0f0f0; color: var(--c-text-muted); }
     #mini-heatmap .mh-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 11px; color: var(--c-text-muted); }
     #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-    #mini-heatmap .mh-legend .lg-used::before { background: var(--c-green); }
-    #mini-heatmap .mh-legend .lg-unused::before { background: var(--c-red); }
-    #mini-heatmap .mh-legend .lg-future::before { background: var(--c-gray); }
+    #mini-heatmap .mh-legend .lg-used::before { background: #171717; }
+    #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
+    #mini-heatmap .mh-legend .lg-future::before { background: #f0f0f0; }
     tr[data-uid] { cursor: default; transition: background .1s; }
-    tr[data-uid]:hover { background: var(--c-primary-light) !important; }
+    tr[data-uid]:hover { background: #f5f5f5 !important; }
 
     /* ── 스피너 ── */
     #spinner { display: none; position: fixed; inset: 0; background: rgba(248,250,252,.85); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999; }
     #spinner.show { display: flex; }
     .spinner-content { text-align: center; }
-    .spinner-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c-primary); margin: 0 4px; animation: bounce .6s ease-in-out infinite; }
+    .spinner-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--c-text); margin: 0 4px; animation: bounce .6s ease-in-out infinite; }
     .spinner-dot:nth-child(2) { animation-delay: .1s; }
     .spinner-dot:nth-child(3) { animation-delay: .2s; }
     @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -294,9 +294,9 @@
 
     <div id="tab-heatmap" style="display:none">
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--c-green)"></div>사용</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--c-red)"></div>미사용</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--c-gray)"></div>미경과</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#171717"></div>사용</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fca5a5"></div>미사용</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f0f0f0"></div>미경과</div>
       </div>
       <div id="heatmap-chart"></div>
     </div>
@@ -638,8 +638,8 @@ function renderTable() {
     const endedBadge = r.is_ended ? '<span class="badge-ended">종료</span>' : "";
     const bg = rowBgColor(r.yellow_cards);
     const ycDisplay = r.yellow_cards > 0
-      ? `<span style="color:#ef4444;font-weight:700">${r.yellow_cards}</span>`
-      : `<span style="color:#94a3b8">0</span>`;
+      ? `<span style="color:#dc2626;font-weight:700">${r.yellow_cards}</span>`
+      : `<span style="color:#a3a3a3">0</span>`;
     return `<tr style="${bg}" data-uid="${r.user_id}">
       <td>${r.subject_id}</td>
       <td>${r.hospital}</td>
@@ -761,9 +761,9 @@ function renderHeatmap() {
   const xLabels = Array.from({length: MAX_DAYS}, (_, i) => `${i+1}일`);
 
   const colorscale = [
-    [0.00, "#f87171"], [0.33, "#f87171"],
-    [0.34, "#22c55e"], [0.66, "#22c55e"],
-    [0.67, "#e2e8f0"], [1.00, "#e2e8f0"],
+    [0.00, "#fca5a5"], [0.33, "#fca5a5"],
+    [0.34, "#171717"], [0.66, "#171717"],
+    [0.67, "#f0f0f0"], [1.00, "#f0f0f0"],
   ];
 
   const height = Math.max(300, rows.length * 36 + 100);
@@ -800,7 +800,7 @@ function renderDist() {
   Plotly.newPlot("dist-hist-chart", [{
     type: "histogram",
     x: compValues,
-    marker: { color: "#6366f1", opacity: 0.85 },
+    marker: { color: "#171717", opacity: 0.85 },
     xbins: { start: 0, end: 100, size: 10 },
   }], {
     xaxis: { title: "순응률(%)", range: [0, 100] },
@@ -814,7 +814,7 @@ function renderDist() {
   Plotly.newPlot("dist-box-chart", [{
     type: "box",
     y: compValues,
-    marker: { color: "#6366f1" },
+    marker: { color: "#171717" },
     boxpoints: "all",
     jitter: 0.3,
     pointpos: -1.5,
@@ -879,14 +879,14 @@ function renderHospitalChart() {
       <th>평균 사용일</th><th>평균 순응률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
-      const compColor = s.avg >= 80 ? "#10b981" : s.avg >= 50 ? "#f59e0b" : "#ef4444";
-      const noUseColor = s.noUseRate > 30 ? "#ef4444" : s.noUseRate > 15 ? "#f59e0b" : "#64748b";
+      const compColor = s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#d97706" : "#dc2626";
+      const noUseColor = s.noUseRate > 30 ? "#dc2626" : s.noUseRate > 15 ? "#d97706" : "#525252";
       return `<tr>
         <td style="text-align:left;font-weight:600">${s.hospital}</td>
         <td>${s.total}명</td><td>${s.active}명</td><td>${s.ended}명</td>
-        <td style="color:${s.noUse > 0 ? '#ef4444' : '#94a3b8'}">${s.noUse}명</td>
+        <td style="color:${s.noUse > 0 ? '#dc2626' : '#a3a3a3'}">${s.noUse}명</td>
         <td style="color:${noUseColor};font-weight:600">${s.noUseRate.toFixed(1)}%</td>
-        <td style="color:${s.yellowCards > 0 ? '#ef4444' : '#94a3b8'}">${s.yellowCards}</td>
+        <td style="color:${s.yellowCards > 0 ? '#dc2626' : '#a3a3a3'}">${s.yellowCards}</td>
         <td>${s.avgUsed.toFixed(1)}일</td>
         <td style="color:${compColor};font-weight:700">${s.avg.toFixed(1)}%</td>
       </tr>`;
@@ -975,7 +975,7 @@ function renderHospitalChart() {
   const entries = sortedByAvg;
   const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
-  const colors   = entries.map(e => e.avg >= 80 ? "#22c55e" : e.avg >= 50 ? "#6366f1" : "#f87171");
+  const colors   = entries.map(e => e.avg >= 80 ? "#059669" : e.avg >= 50 ? "#525252" : "#dc2626");
   const textVals = xValues.map(v => v + "%");
 
   Plotly.newPlot("hospital-chart", [{
@@ -1000,7 +1000,7 @@ function renderHospitalChart() {
     type: "box",
     y: s.compValues,
     name: s.hospital.replace(/대학교/g, "대"),
-    marker: { color: s.avg >= 80 ? "#22c55e" : s.avg >= 50 ? "#6366f1" : "#f87171" },
+    marker: { color: s.avg >= 80 ? "#059669" : s.avg >= 50 ? "#525252" : "#dc2626" },
     boxpoints: "all",
     jitter: 0.4,
     pointpos: 0,
