@@ -187,7 +187,7 @@ def compliance_row_color(val):
     if val < 50:
         return "background-color: #FFF3CD"
     if val >= 80:
-        return "background-color: #D4EDDA"
+        return "background-color: #ccfbf1"
     return ""
 
 
@@ -243,8 +243,8 @@ def render_heatmap(df: pd.DataFrame, session_map: dict):
     colorscale = [
         [0.0,  "#FF6B6B"],
         [0.33, "#FF6B6B"],
-        [0.34, "#28A745"],
-        [0.67, "#28A745"],
+        [0.34, "#2dd4bf"],
+        [0.67, "#2dd4bf"],
         [0.67, "#E8E8E8"],
         [1.0,  "#E8E8E8"],
     ]
@@ -402,7 +402,7 @@ def render_hospital_chart(df: pd.DataFrame):
         summary = stats_df.copy()
         y_labels = [f"{row['기관']} ({row['전체']}명)" for _, row in summary.iterrows()]
         colors = [
-            "#28A745" if v >= 80 else "#4A90D9" if v >= 50 else "#FF6B6B"
+            "#2dd4bf" if v >= 80 else "#4A90D9" if v >= 50 else "#FF6B6B"
             for v in summary["평균 순응률(%)"]
         ]
 
@@ -429,7 +429,7 @@ def render_hospital_chart(df: pd.DataFrame):
         fig = go.Figure()
         for hosp in stats_df["기관"]:
             grp_valid = df_valid[df_valid["hospital"] == hosp]
-            color = "#28A745" if grp_valid["compliance"].mean() >= 80 else "#4A90D9" if grp_valid["compliance"].mean() >= 50 else "#FF6B6B"
+            color = "#2dd4bf" if grp_valid["compliance"].mean() >= 80 else "#4A90D9" if grp_valid["compliance"].mean() >= 50 else "#FF6B6B"
             fig.add_trace(go.Box(
                 y=grp_valid["compliance"],
                 name=hosp.replace("대학교", "대"),

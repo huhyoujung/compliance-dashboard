@@ -18,7 +18,7 @@
         extend: {
           fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
           colors: {
-            mint: { 400: '#34d399', 600: '#059669', 800: '#065f46' },
+            mint: { 400: '#2dd4bf', 600: '#0d9488', 800: '#115e59' },
           },
         },
       },
@@ -57,14 +57,19 @@
     #mini-heatmap .mh-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     #mini-heatmap .mh-title { font-size: 14px; font-weight: 700; color: #171717; letter-spacing: -0.01em; }
     #mini-heatmap .mh-badge { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
-    #mini-heatmap .mh-badge.good { background: #d1fae5; color: #065f46; }
+    #mini-heatmap .mh-badge.good { background: #ccfbf1; color: #115e59; }
     #mini-heatmap .mh-badge.warn { background: #fef3c7; color: #92400e; }
     #mini-heatmap .mh-badge.bad { background: #fee2e2; color: #991b1b; }
     #mini-heatmap .mh-meta { font-size: 12px; color: #a3a3a3; margin-bottom: 14px; display: flex; gap: 12px; }
     #mini-heatmap .mh-meta strong { color: #525252; font-weight: 600; }
-    #mini-heatmap .mh-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    #mini-heatmap .mh-grid { display: grid; grid-template-columns: repeat(7, 1fr) auto; gap: 4px; align-items: center; }
+    #mini-heatmap .mh-week-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 6px; white-space: nowrap; text-align: center; min-width: 42px; margin-left: 2px; }
+    #mini-heatmap .mh-week-badge.good { background: #ccfbf1; color: #115e59; }
+    #mini-heatmap .mh-week-badge.warn { background: #fef3c7; color: #92400e; }
+    #mini-heatmap .mh-week-badge.bad { background: #fee2e2; color: #991b1b; }
+    #mini-heatmap .mh-week-badge.pending { background: #f1f5f9; color: #94a3b8; }
     #mini-heatmap .mh-cell { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; transition: transform .1s, box-shadow .1s; position: relative; }
-    #mini-heatmap .mh-cell.used { background: #34d399; color: #065f46; box-shadow: 0 1px 3px rgba(52,211,153,.3); }
+    #mini-heatmap .mh-cell.used { background: #2dd4bf; color: #115e59; box-shadow: 0 1px 3px rgba(45,212,191,.3); }
     #mini-heatmap .mh-cell.unused { background: #fca5a5; color: #7f1d1d; box-shadow: 0 1px 3px rgba(252,165,165,.3); }
     #mini-heatmap .mh-cell.future { background: #f5f5f5; color: #d4d4d4; }
     #mini-heatmap .mh-cell.today { box-shadow: 0 0 0 2px #171717; z-index: 1; }
@@ -74,7 +79,7 @@
     #mini-heatmap .mh-legend { display: flex; gap: 14px; margin-top: 12px; font-size: 11px; color: #a3a3a3; }
     #mini-heatmap .mh-legend span { display: flex; align-items: center; gap: 5px; }
     #mini-heatmap .mh-legend span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 4px; }
-    #mini-heatmap .mh-legend .lg-used::before { background: #34d399; }
+    #mini-heatmap .mh-legend .lg-used::before { background: #2dd4bf; }
     #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
     #mini-heatmap .mh-legend .lg-future::before { background: #f5f5f5; border: 1px solid #e5e5e5; }
 
@@ -168,7 +173,7 @@
       </div>
       <div class="bg-white rounded-xl px-6 py-5 shadow-sm border border-neutral-200 flex-1 min-w-[150px] hover:shadow-md transition-shadow">
         <div class="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">평균 사용률 <span class="hint-wrap relative inline-flex items-center"><span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span><span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">사용일 / 경과일 × 100</span></span></div>
-        <div class="text-3xl font-bold tracking-tight text-emerald-600" id="card-avg">-</div>
+        <div class="text-3xl font-bold tracking-tight text-teal-600" id="card-avg">-</div>
       </div>
     </div>
 
@@ -211,7 +216,7 @@
             </select>
           </div>
           <div class="flex gap-5 text-[13px] text-neutral-500">
-            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#34d399;box-shadow:0 1px 3px rgba(52,211,153,.3)"></div><span class="font-medium">사용</span></div>
+            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#2dd4bf;box-shadow:0 1px 3px rgba(45,212,191,.3)"></div><span class="font-medium">사용</span></div>
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#fca5a5;box-shadow:0 1px 3px rgba(252,165,165,.3)"></div><span class="font-medium">미사용</span></div>
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#f5f5f5;border:1px solid #e5e5e5"></div><span class="font-medium">미경과</span></div>
           </div>
@@ -638,28 +643,9 @@ function buildMiniHeatmapHTML(r) {
   const badgeText = compVal !== null ? compVal + '%' : 'N/A';
   let header = `<div class="mh-header"><div class="mh-title">${r.subject_id}</div><span class="mh-badge ${badgeClass}">${badgeText}</span></div>`;
   let meta = `<div class="mh-meta"><span>${r.hospital}</span><span>경과 <strong>${r.elapsed_days}</strong>일</span><span>사용 <strong>${r.used_days}</strong>일</span></div>`;
-  // 주별 순응도 상세
   const ws = r.weekly_scores || [];
-  let weeklyDetail = '';
-  if (ws.length > 0) {
-    weeklyDetail = `<div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">`
-      + `<div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px">📊 주별 순응도 (주 3회 이상 → 100%)</div>`
-      + ws.map(w => {
-        const barWidth = Math.max(w.score, 4);
-        const barColor = w.completed
-          ? (w.score >= 100 ? '#34d399' : w.score >= 66.7 ? '#fbbf24' : '#f87171')
-          : '#94a3b8';
-        const label = w.completed ? `${w.score.toFixed(0)}%` : `${w.score.toFixed(0)}%`;
-        const suffix = w.completed ? '' : ' <span style="font-size:9px;color:#94a3b8;font-style:italic">진행중</span>';
-        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px${w.completed ? '' : ';opacity:0.65'}">`
-          + `<span style="font-size:11px;color:#64748b;min-width:32px">${w.week}주차</span>`
-          + `<div style="flex:1;background:#e2e8f0;border-radius:4px;height:14px;position:relative;overflow:hidden">`
-          + `<div style="width:${barWidth}%;height:100%;background:${barColor};border-radius:4px;transition:width .3s"></div></div>`
-          + `<span style="font-size:11px;font-weight:600;min-width:48px;text-align:right;color:${barColor}">${label}</span>`
-          + `<span style="font-size:10px;color:#94a3b8">(${w.used}/3회)${suffix}</span></div>`;
-      }).join('')
-      + `</div>`;
-  }
+  const weekMap = {};
+  ws.forEach(w => { weekMap[w.week] = w; });
   let cells = '';
   // 오늘이 몇 일차인지 계산
   const todayDayNum = r.start_dt ? Math.floor((new Date() - new Date(r.start_dt.getTime())) / 86400000) : -1;
@@ -675,11 +661,24 @@ function buildMiniHeatmapHTML(r) {
     } else {
       cells += `<div class="mh-cell unused${isToday}">${label}</div>`;
     }
+    // 매 7일 끝(6,13,20,27)에 주별 순응도 배지 삽입
+    if ((d + 1) % 7 === 0) {
+      const weekNum = Math.floor(d / 7) + 1;
+      const wData = weekMap[weekNum];
+      if (wData) {
+        const cls = wData.completed
+          ? (wData.score >= 100 ? 'good' : wData.score >= 66.7 ? 'warn' : 'bad')
+          : 'pending';
+        cells += `<div class="mh-week-badge ${cls}" title="${weekNum}주차: ${wData.used}/3회 사용">${wData.score.toFixed(0)}%</div>`;
+      } else {
+        cells += `<div></div>`;
+      }
+    }
   }
   const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span></div>`;
   // 옐로카드 표시
   const ycInfo = r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#dc2626;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
-  return header + meta + `<div class="mh-grid">${cells}</div>` + legend + weeklyDetail + ycInfo;
+  return header + meta + `<div class="mh-grid">${cells}</div>` + legend + ycInfo;
 }
 
 let hoverAttached = false;
@@ -779,7 +778,7 @@ function renderHeatmap() {
 
   const colorscale = [
     [0.00, "#fca5a5"], [0.33, "#fca5a5"],
-    [0.34, "#34d399"], [0.66, "#34d399"],
+    [0.34, "#2dd4bf"], [0.66, "#2dd4bf"],
     [0.67, "#f5f5f5"], [1.00, "#f5f5f5"],
   ];
 
@@ -875,7 +874,7 @@ function renderHospitalChart() {
       <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
-      const compColor = s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#d97706" : "#dc2626";
+      const compColor = s.avg >= 80 ? "#2dd4bf" : s.avg >= 50 ? "#d97706" : "#dc2626";
       const noUseColor = s.noUseRate > 30 ? "#dc2626" : s.noUseRate > 15 ? "#d97706" : "#525252";
       return `<tr>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-left font-semibold whitespace-nowrap">${s.hospital}</td>
@@ -959,7 +958,7 @@ function renderHospitalChart() {
     });
   }
 
-  const tagColors = { danger: 'bg-red-50 text-red-600', warning: 'bg-amber-50 text-amber-600', success: 'bg-emerald-50 text-emerald-600' };
+  const tagColors = { danger: 'bg-red-50 text-red-600', warning: 'bg-amber-50 text-amber-600', success: 'bg-teal-50 text-teal-600' };
   const insightHtml = insights.length ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">${insights.map(i =>
     `<div class="bg-white rounded-xl px-5 py-4 shadow-sm border border-neutral-200">
       <h3 class="text-sm font-bold text-neutral-900 mb-2.5">${i.title} <span class="text-[11px] px-2.5 py-0.5 rounded-full font-semibold ${tagColors[i.type]}">${i.type === "danger" ? "위험" : i.type === "warning" ? "주의" : "양호"}</span></h3>
@@ -972,7 +971,7 @@ function renderHospitalChart() {
   const entries = sortedByAvg;
   const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
-  const colors   = entries.map(e => e.avg >= 80 ? "#34d399" : e.avg >= 50 ? "#525252" : "#dc2626");
+  const colors   = entries.map(e => e.avg >= 80 ? "#2dd4bf" : e.avg >= 50 ? "#525252" : "#dc2626");
   const textVals = xValues.map(v => v + "%");
 
   Plotly.newPlot("hospital-chart", [{
@@ -1016,8 +1015,8 @@ function renderHospitalChart() {
 
   // ── 기관별 바이올린 플롯 ──
   const violinTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => {
-    const baseColor = s.avg >= 80 ? "#34d399" : s.avg >= 50 ? "#525252" : "#dc2626";
-    const fillAlpha = s.avg >= 80 ? "rgba(52,211,153,0.15)" : s.avg >= 50 ? "rgba(82,82,82,0.15)" : "rgba(220,38,38,0.15)";
+    const baseColor = s.avg >= 80 ? "#2dd4bf" : s.avg >= 50 ? "#525252" : "#dc2626";
+    const fillAlpha = s.avg >= 80 ? "rgba(45,212,191,0.15)" : s.avg >= 50 ? "rgba(82,82,82,0.15)" : "rgba(220,38,38,0.15)";
     return {
       type: "violin",
       y: s.compValues,
