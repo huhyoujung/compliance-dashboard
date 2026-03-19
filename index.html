@@ -875,12 +875,12 @@ function renderHospitalChart() {
       <th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용일</th><th class="bg-neutral-50 px-3.5 py-3 text-center font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs">평균 사용률</th>
     </tr></thead>
     <tbody>${sortedByAvg.map(s => {
-      const compColor = s.avg >= 80 ? "#2dd4bf" : s.avg >= 50 ? "#d97706" : "#dc2626";
-      const noUseColor = s.noUseRate > 30 ? "#dc2626" : s.noUseRate > 15 ? "#d97706" : "#525252";
+      const compColor = s.avg < 50 ? "#f472b6" : "#171717";
+      const noUseColor = s.noUseRate > 30 ? "#f472b6" : "#525252";
       return `<tr>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-left font-semibold whitespace-nowrap">${s.hospital}</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.total}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.active}명</td><td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.ended}명</td>
-        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.noUse > 0 ? '#dc2626' : '#a3a3a3'}">${s.noUse}명</td>
+        <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.noUse > 0 ? '#f472b6' : '#a3a3a3'}">${s.noUse}명</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap font-semibold" style="color:${noUseColor}">${s.noUseRate.toFixed(1)}%</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap" style="color:${s.yellowCards > 0 ? '#f472b6' : '#a3a3a3'}">${s.yellowCards}</td>
         <td class="px-3.5 py-2.5 border-b border-neutral-100 text-center whitespace-nowrap">${s.avgUsed.toFixed(1)}일</td>
@@ -972,7 +972,7 @@ function renderHospitalChart() {
   const entries = sortedByAvg;
   const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
-  const colors   = entries.map(e => e.avg >= 80 ? "#2dd4bf" : e.avg >= 50 ? "#525252" : "#dc2626");
+  const colors   = entries.map(e => e.avg < 50 ? "#f472b6" : "#171717");
   const textVals = xValues.map(v => v + "%");
 
   Plotly.newPlot("hospital-chart", [{
@@ -1016,8 +1016,8 @@ function renderHospitalChart() {
 
   // ── 기관별 바이올린 플롯 ──
   const boxTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => {
-    const baseColor = s.avg >= 80 ? "#2dd4bf" : s.avg >= 50 ? "#525252" : "#dc2626";
-    const fillAlpha = s.avg >= 80 ? "rgba(45,212,191,0.15)" : s.avg >= 50 ? "rgba(82,82,82,0.15)" : "rgba(220,38,38,0.15)";
+    const baseColor = s.avg < 50 ? "#f472b6" : "#171717";
+    const fillAlpha = s.avg < 50 ? "rgba(244,114,182,0.15)" : "rgba(23,23,23,0.10)";
     return {
       type: "box",
       y: s.compValues,
