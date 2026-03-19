@@ -79,8 +79,8 @@ def load_data():
         diff = (pd.Timestamp(sess_date.date()) + pd.Timedelta(hours=12) - anchor).total_seconds()
         if diff < 0:
             continue
-        day_num = int(diff // 86400) + 1
-        if day_num < 1 or day_num > 28:
+        day_num = int(diff // 86400)
+        if day_num < 0 or day_num >= 28:
             continue
         sid_str = str(sid).strip() if pd.notna(sid) else ""
         session_map.setdefault(uid, {}).setdefault(day_num, []).append(sid_str)
@@ -114,8 +114,8 @@ def load_data():
 
         - 하루의 경계: 자정(00:00)이 아닌 익일 정오(12:00)
         - anchor = date(start_dt) 당일 12:00:00
-        - elapsed = floor((reference_dt - anchor) / 24h) + 1
-        - delta < 0 (당일 정오 이전 사용): 0 반환 → 순응 불포함
+        - 가입 당일(정오~익일 정오) = 0일차 → 순응 미표시
+        - 익일 정오 이후 = 1일차부터 카운트
         - 상한: 28일
         """
         if pd.isna(start_dt) or reference_dt < start_dt:
@@ -123,9 +123,8 @@ def load_data():
         anchor = datetime.combine(start_dt.date(), time(12, 0, 0))
         delta_seconds = (reference_dt - anchor).total_seconds()
         if delta_seconds < 0:
-            # 가입 당일 정오 이전 사용 → 순응 불포함
             return 0
-        elapsed = int(delta_seconds // 86400) + 1
+        elapsed = int(delta_seconds // 86400)
         return min(elapsed, 28)
 
     # 경과일: 익일 정오 경계 기준, reference = min(종료일자, 현재시각)
@@ -191,22 +190,23 @@ def render_heatmap(df: pd.DataFrame, session_map: dict):
 
         row_vals  = []
         row_hover = []
-        for d in range(1, max_days + 1):
-            day_dt   = start + pd.Timedelta(days=d - 1)
+        for d in range(0, max_days):
+            day_dt   = start + pd.Timedelta(days=d)
             date_str = day_dt.strftime("%Y-%m-%d")
+            label    = d + 1  # 표시용: 1일차~28일차
             day_sessions = sess.get(d, [])
             has_session = len(day_sessions) > 0
 
-            if d > elapsed:
+            if d >= elapsed:
                 row_vals.append(2)
-                row_hover.append(f"{subject_id} | {d}일차({date_str}) | 미경과")
+                row_hover.append(f"{subject_id} | {label}일차({date_str}) | 미경과")
             elif has_session:
                 row_vals.append(1)
                 sid_str = ", ".join(day_sessions)
-                row_hover.append(f"{subject_id} | {d}일차({date_str}) | 사용<br>세션: {sid_str}")
+                row_hover.append(f"{subject_id} | {label}일차({date_str}) | 사용<br>세션: {sid_str}")
             else:
                 row_vals.append(0)
-                row_hover.append(f"{subject_id} | {d}일차({date_str}) | 미사용")
+                row_hover.append(f"{subject_id} | {label}일차({date_str}) | 미사용")
 
         matrix.append(row_vals)
         hover.append(row_hover)

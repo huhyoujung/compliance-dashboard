@@ -58,22 +58,12 @@
     button.refresh-btn:hover { background: #1558c0; }
 
     /* ── 탭 ── */
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; }
     .tab-btn {
-      padding: 10px 16px; border: none; border-radius: 6px; font-size: 14px;
-      cursor: pointer; color: #666; background: #f0f0f0; font-weight: 500;
-      transition: all 0.2s ease;
+      padding: 10px 18px; border: none; background: none; font-size: 14px;
+      cursor: pointer; color: #666; border-bottom: 2px solid transparent; margin-bottom: -2px;
     }
-    .tab-btn:hover { background: #e8e8e8; }
-    .tab-btn.active { color: #fff; background: #1a73e8; font-weight: 600; }
-
-    /* ── 서브탭 ── */
-    .sub-tabs { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-    .sub-tab-group { display: flex; align-items: center; gap: 4px; }
-    .sub-tab-label { font-size: 12px; color: #888; margin-right: 2px; }
-    .sub-tab-btn { padding: 4px 12px; border: 1px solid #ddd; border-radius: 14px; background: #fff; font-size: 12px; cursor: pointer; color: #555; transition: all .15s; }
-    .sub-tab-btn:hover { background: #f0f4ff; }
-    .sub-tab-btn.active { background: #1a73e8; color: #fff; border-color: #1a73e8; font-weight: 600; }
+    .tab-btn.active { color: #1a73e8; border-bottom-color: #1a73e8; font-weight: 600; }
 
     /* ── 테이블 ── */
     .table-wrap { overflow-x: auto; }
@@ -88,26 +78,6 @@
     .legend { display: flex; gap: 16px; margin-bottom: 10px; font-size: 13px; }
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
-
-    /* ── 인사이트 ── */
-    .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .insight-card {
-      background: #fff; border-radius: 10px; padding: 16px 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
-    }
-    .insight-card h3 { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 8px; }
-    .insight-list { list-style: none; font-size: 13px; color: #555; }
-    .insight-list li { padding: 4px 0; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; }
-    .insight-list li:last-child { border-bottom: none; }
-    .insight-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-    .insight-tag.danger { background: #FFCCCC; color: #c62828; }
-    .insight-tag.warning { background: #FFF3CD; color: #f57f17; }
-    .insight-tag.success { background: #D4EDDA; color: #2e7d32; }
-    .hospital-kpi-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 20px; }
-    .hospital-kpi-table th { background: #f8f9fa; padding: 10px 12px; text-align: center; font-weight: 600; color: #444; border-bottom: 2px solid #e0e0e0; white-space: nowrap; font-size: 12px; }
-    .hospital-kpi-table td { padding: 9px 12px; border-bottom: 1px solid #f0f0f0; text-align: center; white-space: nowrap; }
-    .hospital-kpi-table tr:last-child td { border-bottom: none; }
-    @media (max-width: 900px) { .insight-grid { grid-template-columns: 1fr; } }
 
     /* ── 스피너 ── */
     #spinner { display: none; position: fixed; inset: 0; background: rgba(255,255,255,.7); justify-content: center; align-items: center; z-index: 999; font-size: 16px; font-weight: 600; color: #1a73e8; }
@@ -148,11 +118,6 @@
       <input type="checkbox" id="yellow-card-only" onchange="applyFilters()">
       옐로카드 있는 환자만 보기
     </label>
-
-    <div style="margin-top:auto;padding-top:16px;border-top:1px solid #eee;display:flex;flex-direction:column;gap:6px;font-size:12px">
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer" style="color:#1a73e8;text-decoration:none">📄 환자 데이터 시트 ↗</a>
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer" style="color:#1a73e8;text-decoration:none">📄 세션 기록 시트 ↗</a>
-    </div>
   </aside>
 
   <!-- 메인 -->
@@ -161,13 +126,6 @@
     <div class="caption" id="caption">-</div>
 
     <!-- 요약 카드 -->
-    <div class="sub-tabs" style="margin-bottom:8px">
-      <div class="sub-tab-group">
-        <span class="sub-tab-label">범위:</span>
-        <button class="sub-tab-btn active" onclick="setCardScope('all', this)">전체</button>
-        <button class="sub-tab-btn" onclick="setCardScope('active', this)">사용중</button>
-      </div>
-    </div>
     <div class="cards">
       <div class="card">
         <div class="card-label">전체 대상자</div>
@@ -196,15 +154,6 @@
     </div>
 
     <div id="tab-table">
-      <div class="sub-tabs" id="table-sub-tabs">
-        <div class="sub-tab-group">
-          <span class="sub-tab-label">상태:</span>
-          <button class="sub-tab-btn active" onclick="switchTableStatus('all', this)">전체</button>
-          <button class="sub-tab-btn" onclick="switchTableStatus('active', this)">사용중</button>
-          <button class="sub-tab-btn" onclick="switchTableStatus('ended', this)">만료됨</button>
-        </div>
-        <div class="sub-tab-group" id="hospital-sub-tabs"></div>
-      </div>
       <div class="table-wrap">
         <table id="patient-table">
           <thead>
@@ -244,12 +193,7 @@
     </div>
 
     <div id="tab-hospital" style="display:none">
-      <div id="hospital-insights"></div>
-      <div id="hospital-kpi-wrap"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div id="hospital-chart"></div>
-        <div id="hospital-box-chart"></div>
-      </div>
+      <div id="hospital-chart"></div>
     </div>
   </main>
 </div>
@@ -258,7 +202,6 @@
 // ── 상수 ──────────────────────────────────────────────────────────────────
 const SHEET_ID = "1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
-const SESSION_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=12940537`;
 
 const HOSPITAL_PREFIX = {
   "서울대학교병원": "h01",
@@ -281,14 +224,9 @@ let filteredRows = [];    // 필터 적용 후
 let sortKey = "yellow_cards";
 let sortAsc = false;
 let lastLoaded = null;
-let sessionMap = {};      // { user_id: { dayN: [sessionId, ...], ... } }
-let cardScope = "all";    // "all" | "active"
-let tableStatusTab = "all"; // "all" | "active" | "ended"
-let tableHospitalTab = "all"; // "all" | hospital name
 
 // 5분 캐시
 let cachedCsv = null;
-let cachedSessionCsv = null;
 let cachedAt  = null;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -304,36 +242,12 @@ function calcElapsedDays(startDt, referenceDt) {
   anchor.setHours(12, 0, 0, 0);
   const deltaMs = referenceDt - anchor;
   if (deltaMs < 0) return 0;
-  // 가입 당일(정오~익일 정오) = 0일차 → 순응 미표시
-  // 익일 정오 이후 = 1일차부터 카운트
-  return Math.min(Math.floor(deltaMs / 86400000), MAX_DAYS);
+  return Math.min(Math.floor(deltaMs / 86400000) + 1, MAX_DAYS);
 }
 
 function calcCompliance(usedDays, elapsedDays) {
   if (elapsedDays === 0) return null;
   return Math.min((usedDays / elapsedDays) * 100, 100);
-}
-
-// ── Session Attend Record 파싱 ───────────────────────────────────────────
-function parseSessionCsv(csvText) {
-  const result = Papa.parse(csvText, { header: false, skipEmptyLines: true });
-  const rows = result.data;
-  // Row 0: 메타헤더(스킵), Row 1: 컬럼명, Row 2+: 데이터
-  if (rows.length < 3) return {};
-  const headers = rows[1].map(h => h.trim());
-  const dataRows = rows.slice(2);
-  const ci = key => headers.indexOf(key);
-  const map = {};  // { user_id: { "2025-03-05": [sessionId, ...] } }
-  dataRows.forEach(r => {
-    const uid = (r[ci("user_id")] || "").trim();
-    const dayStr = (r[ci("session_day")] || "").trim();
-    const sid = (r[ci("counted_session_id")] || "").trim();
-    if (!uid || !dayStr) return;
-    if (!map[uid]) map[uid] = {};
-    if (!map[uid][dayStr]) map[uid][dayStr] = [];
-    if (sid) map[uid][dayStr].push(sid);
-  });
-  return map;
 }
 
 // ── CSV 파싱 & 가공 ──────────────────────────────────────────────────────
@@ -357,37 +271,13 @@ function parseCsv(csvText) {
       const prefix      = HOSPITAL_PREFIX[hospital] || "";
       const subject_id  = prefix ? `${prefix}-${accessCode}` : accessCode;
 
-      const userId    = (r[idx("사용자아이디")] || "").trim();
       const startRaw = (r[idx("시작일자")] || "").trim();
+      const endRaw   = (r[idx("종료일자")] || "").trim();
       const start_dt = startRaw ? new Date(startRaw) : null;
+      const end_dt   = endRaw   ? new Date(endRaw)   : null;
 
-      // 만료: start_dt + 28일 11:59:59
-      let end_dt = null;
-      let endRaw = "";
-      if (start_dt) {
-        end_dt = new Date(start_dt.getTime() + 28 * 86400000);
-        end_dt.setHours(11, 59, 59, 999);
-        endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
-      }
-
-      // used_days: sessionMap 날짜 → day number 변환
-      const rawSessions = sessionMap[userId] || {};
-      const userSessions = {};  // { dayNumber: [sessionId, ...] }
-      if (start_dt) {
-        const anchor = new Date(start_dt);
-        anchor.setHours(12, 0, 0, 0);
-        Object.entries(rawSessions).forEach(([dateStr, sids]) => {
-          const sessDate = new Date(dateStr + "T12:00:00");
-          if (isNaN(sessDate)) return;
-          const diffMs = sessDate - anchor;
-          if (diffMs < 0) return;
-          const dayNum = Math.floor(diffMs / 86400000);
-          if (dayNum >= 0 && dayNum < MAX_DAYS) {
-            userSessions[dayNum] = (userSessions[dayNum] || []).concat(sids);
-          }
-        });
-      }
-      const used_days = Object.keys(userSessions).length;
+      const usedDaysRaw = parseFloat(r[idx("사용일차")] || "0");
+      const used_days   = isNaN(usedDaysRaw) ? 0 : Math.round(usedDaysRaw);
 
       const ref = (end_dt && end_dt < now) ? end_dt : now;
       const elapsed_days = start_dt ? calcElapsedDays(start_dt, ref) : 0;
@@ -403,7 +293,6 @@ function parseCsv(csvText) {
 
       return {
         subject_id,
-        user_id: userId,
         hospital,
         start_dt,
         end_dt,
@@ -414,7 +303,6 @@ function parseCsv(csvText) {
         compliance: compVal,   // null or 0~100
         yellow_cards,
         is_ended: !!is_ended,
-        sessions: userSessions, // { dayN: [sessionId, ...] }
       };
     });
 }
@@ -426,20 +314,15 @@ async function loadData(forceRefresh = false) {
 
   try {
     const now = Date.now();
-    if (!forceRefresh && cachedCsv && cachedSessionCsv && cachedAt && (now - cachedAt) < CACHE_TTL_MS) {
-      sessionMap = parseSessionCsv(cachedSessionCsv);
+    if (!forceRefresh && cachedCsv && cachedAt && (now - cachedAt) < CACHE_TTL_MS) {
       allRows = parseCsv(cachedCsv);
     } else {
-      const [mainResp, sessResp] = await Promise.all([
-        fetch(SHEET_URL + "&t=" + now),
-        fetch(SESSION_URL + "&t=" + now),
-      ]);
-      if (!mainResp.ok) throw new Error(`HTTP ${mainResp.status}`);
-      if (!sessResp.ok) throw new Error(`Session HTTP ${sessResp.status}`);
-      cachedCsv = await mainResp.text();
-      cachedSessionCsv = await sessResp.text();
+      // cache-busting query param
+      const url = SHEET_URL + "&t=" + now;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      cachedCsv = await resp.text();
       cachedAt = now;
-      sessionMap = parseSessionCsv(cachedSessionCsv);
       allRows = parseCsv(cachedCsv);
     }
     lastLoaded = new Date();
@@ -484,7 +367,6 @@ function applyFilters() {
     return true;
   });
 
-  buildHospitalSubTabs();
   renderCards();
   renderTable();
   renderHeatmap();
@@ -492,29 +374,17 @@ function applyFilters() {
   renderHospitalChart();
 }
 
-// ── 카드 스코프 토글 ──────────────────────────────────────────────────────
-function setCardScope(scope, btn) {
-  cardScope = scope;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderCards();
-}
-
 // ── 요약 카드 ────────────────────────────────────────────────────────────
 function renderCards() {
-  const base = cardScope === "active"
-    ? filteredRows.filter(r => !r.is_ended)
-    : filteredRows;
-  const total = base.length;
-  const noUse = base.filter(r => r.used_days === 0).length;
-  const yellowCount = base.filter(r => r.yellow_cards > 0 && !r.is_ended).length;
-  const validRows = base.filter(r => r.elapsed_days > 0 && r.compliance !== null);
+  const total = filteredRows.length;
+  const noUse = filteredRows.filter(r => r.used_days === 0).length;
+  const yellowCount = filteredRows.filter(r => r.yellow_cards > 0 && !r.is_ended).length;
+  const validRows = filteredRows.filter(r => r.elapsed_days > 0 && r.compliance !== null);
   const avg = validRows.length
     ? validRows.reduce((s, r) => s + r.compliance, 0) / validRows.length
     : null;
 
-  const scopeLabel = cardScope === "active" ? " (사용중)" : "";
-  document.getElementById("card-total").textContent = total + "명" + scopeLabel;
+  document.getElementById("card-total").textContent = total + "명";
   document.getElementById("card-nouse").textContent = noUse + "명";
   document.getElementById("card-yellow").textContent = yellowCount + "명";
   document.getElementById("card-avg").textContent = avg !== null ? avg.toFixed(1) + "%" : "-";
@@ -529,33 +399,6 @@ function rowBgColor(compliance) {
   return "";
 }
 
-function switchTableStatus(val, btn) {
-  tableStatusTab = val;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderTable();
-}
-
-function switchTableHospital(val, btn) {
-  tableHospitalTab = val;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderTable();
-}
-
-function buildHospitalSubTabs() {
-  const hospitals = [...new Set(filteredRows.map(r => r.hospital))].sort();
-  const container = document.getElementById("hospital-sub-tabs");
-  let html = '<span class="sub-tab-label">기관:</span>';
-  html += `<button class="sub-tab-btn${tableHospitalTab === "all" ? " active" : ""}" onclick="switchTableHospital('all', this)">전체</button>`;
-  hospitals.forEach(h => {
-    const active = tableHospitalTab === h ? " active" : "";
-    const safeH = h.replace(/'/g, "\\'");
-    html += `<button class="sub-tab-btn${active}" onclick="switchTableHospital('${safeH}', this)">${h}</button>`;
-  });
-  container.innerHTML = html;
-}
-
 function sortTable(key) {
   if (sortKey === key) sortAsc = !sortAsc;
   else { sortKey = key; sortAsc = true; }
@@ -563,10 +406,7 @@ function sortTable(key) {
 }
 
 function renderTable() {
-  let rows = [...filteredRows];
-  if (tableStatusTab === "active") rows = rows.filter(r => !r.is_ended);
-  else if (tableStatusTab === "ended") rows = rows.filter(r => r.is_ended);
-  if (tableHospitalTab !== "all") rows = rows.filter(r => r.hospital === tableHospitalTab);
+  const rows = [...filteredRows];
 
   rows.sort((a, b) => {
     let va = a[sortKey], vb = b[sortKey];
@@ -617,25 +457,20 @@ function renderHeatmap() {
   rows.forEach(r => {
     const rowVals  = [];
     const rowHover = [];
-    const sess = r.sessions || {};
-    for (let d = 0; d < MAX_DAYS; d++) {
-      const dayOffset = d * 86400000;
+    for (let d = 1; d <= MAX_DAYS; d++) {
+      const dayOffset = (d - 1) * 86400000;
       const dayDt = r.start_dt ? new Date(r.start_dt.getTime() + dayOffset) : null;
       const dateStr = dayDt ? dayDt.toLocaleDateString("ko-KR") : "?";
-      const label = d + 1;  // 표시용: 1일차~28일차
-      const daySessions = sess[d] || [];
-      const hasSession = daySessions.length > 0;
 
-      if (d >= r.elapsed_days) {
+      if (d > r.elapsed_days) {
         rowVals.push(2);
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미경과`);
-      } else if (hasSession) {
+        rowHover.push(`${r.subject_id} | ${d}일차 (${dateStr}) | 미경과`);
+      } else if (d <= r.used_days) {
         rowVals.push(1);
-        const sidStr = daySessions.join(", ");
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidStr}`);
+        rowHover.push(`${r.subject_id} | ${d}일차 (${dateStr}) | 사용`);
       } else {
         rowVals.push(0);
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미사용`);
+        rowHover.push(`${r.subject_id} | ${d}일차 (${dateStr}) | 미사용`);
       }
     }
     matrix.push(rowVals);
@@ -649,6 +484,34 @@ function renderHeatmap() {
     [0.34, "#28A745"], [0.66, "#28A745"],
     [0.67, "#E8E8E8"], [1.00, "#E8E8E8"],
   ];
+
+  // 중앙값 elapsed_days 세로선
+  const elapsedVals = rows.map(r => r.elapsed_days).filter(v => v > 0);
+  const medianElapsed = elapsedVals.length
+    ? elapsedVals.sort((a,b)=>a-b)[Math.floor(elapsedVals.length/2)]
+    : null;
+
+  const shapes = [];
+  if (medianElapsed && medianElapsed <= MAX_DAYS) {
+    shapes.push({
+      type: "line",
+      x0: medianElapsed - 0.5, x1: medianElapsed - 0.5,
+      y0: -0.5, y1: rows.length - 0.5,
+      xref: "x", yref: "y",
+      line: { color: "#1A73E8", width: 2, dash: "dash" },
+    });
+  }
+
+  const today = new Date().toLocaleDateString("ko-KR");
+  const annotations = medianElapsed ? [{
+    x: medianElapsed - 0.5,
+    y: -0.7,
+    xref: "x", yref: "y",
+    text: `오늘 (${today})`,
+    showarrow: false,
+    font: { color: "#1A73E8", size: 11 },
+    yanchor: "bottom",
+  }] : [];
 
   const height = Math.max(300, rows.length * 36 + 100);
 
@@ -670,6 +533,8 @@ function renderHeatmap() {
     yaxis: { autorange: "reversed" },
     plot_bgcolor: "white",
     paper_bgcolor: "white",
+    shapes,
+    annotations,
   }, { responsive: true });
 }
 
@@ -718,148 +583,28 @@ function switchDistTab(tab, btn) {
   btn.classList.add("active");
 }
 
-// ── 기관별 차트 + 인사이트 ────────────────────────────────────────────────
+// ── 기관별 차트 ──────────────────────────────────────────────────────────
 function renderHospitalChart() {
   const validRows = filteredRows.filter(r => r.compliance !== null);
-  if (!validRows.length) {
-    document.getElementById("hospital-insights").innerHTML = "";
-    document.getElementById("hospital-kpi-wrap").innerHTML = "";
-    Plotly.purge("hospital-chart");
-    Plotly.purge("hospital-box-chart");
-    return;
-  }
+  if (!validRows.length) return;
 
-  // ── 기관별 통계 집계 ──
-  const hospitalStats = {};
-  filteredRows.forEach(r => {
-    if (!hospitalStats[r.hospital]) {
-      hospitalStats[r.hospital] = {
-        hospital: r.hospital, total: 0, active: 0, ended: 0,
-        noUse: 0, yellowCards: 0, compValues: [], usedDays: [],
-      };
-    }
-    const s = hospitalStats[r.hospital];
-    s.total++;
-    if (r.is_ended) s.ended++; else s.active++;
-    if (r.used_days === 0) s.noUse++;
-    if (r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
-    if (r.compliance !== null) s.compValues.push(r.compliance);
-    s.usedDays.push(r.used_days);
+  const hospitalMap = {};
+  validRows.forEach(r => {
+    if (!hospitalMap[r.hospital]) hospitalMap[r.hospital] = [];
+    hospitalMap[r.hospital].push(r.compliance);
   });
 
-  const stats = Object.values(hospitalStats).map(s => {
-    const avg = s.compValues.length ? s.compValues.reduce((a,b) => a + b, 0) / s.compValues.length : 0;
-    const noUseRate = s.total ? (s.noUse / s.total * 100) : 0;
-    const avgUsed = s.usedDays.length ? s.usedDays.reduce((a,b) => a + b, 0) / s.usedDays.length : 0;
-    return { ...s, avg, noUseRate, avgUsed };
-  });
+  const entries = Object.entries(hospitalMap)
+    .map(([h, vals]) => ({
+      hospital: h,
+      avg: vals.reduce((a,b)=>a+b,0)/vals.length,
+      count: vals.length,
+    }))
+    .sort((a,b) => a.avg - b.avg);
 
-  // ── KPI 테이블 ──
-  const sortedByAvg = [...stats].sort((a,b) => a.avg - b.avg);
-  const kpiHtml = `<table class="hospital-kpi-table">
-    <thead><tr>
-      <th>기관</th><th>전체</th><th>사용중</th><th>만료</th>
-      <th>미사용자</th><th>미사용률</th><th>옐로카드</th>
-      <th>평균 사용일</th><th>평균 순응률</th>
-    </tr></thead>
-    <tbody>${sortedByAvg.map(s => {
-      const compColor = s.avg >= 80 ? "#2e7d32" : s.avg >= 50 ? "#f57f17" : "#c62828";
-      const noUseColor = s.noUseRate > 30 ? "#c62828" : s.noUseRate > 15 ? "#f57f17" : "#555";
-      return `<tr>
-        <td style="text-align:left;font-weight:600">${s.hospital}</td>
-        <td>${s.total}명</td><td>${s.active}명</td><td>${s.ended}명</td>
-        <td style="color:${s.noUse > 0 ? '#e53935' : '#aaa'}">${s.noUse}명</td>
-        <td style="color:${noUseColor};font-weight:600">${s.noUseRate.toFixed(1)}%</td>
-        <td style="color:${s.yellowCards > 0 ? '#e53935' : '#aaa'}">${s.yellowCards}</td>
-        <td>${s.avgUsed.toFixed(1)}일</td>
-        <td style="color:${compColor};font-weight:700">${s.avg.toFixed(1)}%</td>
-      </tr>`;
-    }).join("")}</tbody>
-  </table>`;
-  document.getElementById("hospital-kpi-wrap").innerHTML = kpiHtml;
-
-  // ── 자동 인사이트 생성 ──
-  const insights = [];
-  const totalAll = stats.reduce((s,h) => s + h.total, 0);
-  const avgAll = validRows.reduce((s,r) => s + r.compliance, 0) / validRows.length;
-
-  // 1) 가장 순응률 낮은 기관
-  const worst = sortedByAvg[0];
-  if (worst && worst.avg < avgAll) {
-    insights.push({
-      type: "danger",
-      title: "⚠️ 순응률 최하위 기관",
-      text: `<strong>${worst.hospital}</strong>의 평균 순응률이 <strong>${worst.avg.toFixed(1)}%</strong>로 전체 평균(${avgAll.toFixed(1)}%) 대비 ${(avgAll - worst.avg).toFixed(1)}%p 낮습니다.`,
-    });
-  }
-
-  // 2) 미사용률 높은 기관
-  const highNoUse = stats.filter(s => s.noUseRate > 20 && s.total >= 2).sort((a,b) => b.noUseRate - a.noUseRate);
-  if (highNoUse.length) {
-    insights.push({
-      type: "warning",
-      title: "🚨 미사용률 주의 기관",
-      text: highNoUse.map(s => `<strong>${s.hospital}</strong>: ${s.noUse}/${s.total}명 미사용 (${s.noUseRate.toFixed(1)}%)`).join("<br>"),
-    });
-  }
-
-  // 3) 옐로카드 많은 기관
-  const highYellow = stats.filter(s => s.yellowCards >= 2).sort((a,b) => b.yellowCards - a.yellowCards);
-  if (highYellow.length) {
-    insights.push({
-      type: "danger",
-      title: "🟡 옐로카드 집중 기관",
-      text: highYellow.map(s => `<strong>${s.hospital}</strong>: 활성 옐로카드 ${s.yellowCards}건`).join("<br>"),
-    });
-  }
-
-  // 4) 우수 기관
-  const best = [...stats].filter(s => s.compValues.length >= 2).sort((a,b) => b.avg - a.avg)[0];
-  if (best && best.avg > avgAll) {
-    insights.push({
-      type: "success",
-      title: "🏆 순응률 우수 기관",
-      text: `<strong>${best.hospital}</strong>의 평균 순응률이 <strong>${best.avg.toFixed(1)}%</strong>로 가장 높습니다.`,
-    });
-  }
-
-  // 5) 기관간 편차
-  if (stats.length >= 2) {
-    const maxAvg = Math.max(...stats.map(s => s.avg));
-    const minAvg = Math.min(...stats.map(s => s.avg));
-    const gap = maxAvg - minAvg;
-    if (gap > 20) {
-      insights.push({
-        type: "warning",
-        title: "📊 기관 간 편차",
-        text: `기관 간 평균 순응률 차이가 <strong>${gap.toFixed(1)}%p</strong>로, 관리 격차가 큽니다. 하위 기관의 사용 독려가 필요합니다.`,
-      });
-    }
-  }
-
-  // 6) 전체 미사용자 없으면 긍정 메시지
-  const totalNoUse = stats.reduce((s,h) => s + h.noUse, 0);
-  if (totalNoUse === 0 && totalAll > 0) {
-    insights.push({
-      type: "success",
-      title: "✅ 전원 사용 중",
-      text: "모든 기관에서 미사용자가 없습니다. 초기 온보딩이 양호합니다.",
-    });
-  }
-
-  const insightHtml = insights.length ? `<div class="insight-grid">${insights.map(i =>
-    `<div class="insight-card">
-      <h3>${i.title} <span class="insight-tag ${i.type}">${i.type === "danger" ? "위험" : i.type === "warning" ? "주의" : "양호"}</span></h3>
-      <div style="font-size:13px;color:#555;line-height:1.6">${i.text}</div>
-    </div>`
-  ).join("")}</div>` : "";
-  document.getElementById("hospital-insights").innerHTML = insightHtml;
-
-  // ── 평균 순응률 바 차트 ──
-  const entries = sortedByAvg;
-  const yLabels  = entries.map(e => `${e.hospital} (${e.total}명)`);
+  const yLabels  = entries.map(e => `${e.hospital} (${e.count}명)`);
   const xValues  = entries.map(e => parseFloat(e.avg.toFixed(1)));
-  const colors   = entries.map(e => e.avg >= 80 ? "#28A745" : e.avg >= 50 ? "#4A90D9" : "#FF6B6B");
+  const colors   = entries.map(e => e.avg >= 80 ? "#28A745" : "#4A90D9");
   const textVals = xValues.map(v => v + "%");
 
   Plotly.newPlot("hospital-chart", [{
@@ -871,31 +616,9 @@ function renderHospitalChart() {
     text: textVals,
     textposition: "outside",
   }], {
-    title: { text: "평균 순응률", font: { size: 14 } },
-    xaxis: { title: "순응률(%)", range: [0, 115] },
-    margin: { l: 200, r: 60, t: 40, b: 50 },
-    height: Math.max(300, entries.length * 50),
-    paper_bgcolor: "white",
-    plot_bgcolor: "white",
-  }, { responsive: true });
-
-  // ── 기관별 박스플롯 ──
-  const boxTraces = [...stats].sort((a,b) => a.avg - b.avg).map(s => ({
-    type: "box",
-    y: s.compValues,
-    name: s.hospital.replace(/대학교/g, "대"),
-    marker: { color: s.avg >= 80 ? "#28A745" : s.avg >= 50 ? "#4A90D9" : "#FF6B6B" },
-    boxpoints: "all",
-    jitter: 0.4,
-    pointpos: 0,
-  }));
-
-  Plotly.newPlot("hospital-box-chart", boxTraces, {
-    title: { text: "순응률 분포", font: { size: 14 } },
-    yaxis: { title: "순응률(%)", range: [-5, 110] },
-    margin: { l: 50, r: 20, t: 40, b: 80 },
-    height: Math.max(300, entries.length * 50),
-    showlegend: false,
+    xaxis: { title: "평균 순응률(%)", range: [0, 115] },
+    margin: { l: 200, r: 60, t: 30, b: 50 },
+    height: Math.max(300, entries.length * 44),
     paper_bgcolor: "white",
     plot_bgcolor: "white",
   }, { responsive: true });
@@ -914,8 +637,7 @@ function switchTab(name, btn) {
   // 탭 전환 시 차트 재렌더 (Plotly responsive 갱신)
   if (name === "heatmap") renderHeatmap();
   if (name === "dist")    renderDist();
-  if (name === "hospital") { renderHospitalChart(); }
-  setTimeout(() => { Plotly.Plots.resize(document.getElementById(`tab-${name}`)); }, 100);
+  if (name === "hospital") renderHospitalChart();
 }
 
 // ── 초기 로드 ────────────────────────────────────────────────────────────
