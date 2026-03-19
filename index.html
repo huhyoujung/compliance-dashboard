@@ -1032,6 +1032,7 @@ function renderHospitalChart() {
       pointpos: -1.5,
       spanmode: "hard",
       scalemode: "count",
+      bandwidth: s.compValues.length < 4 ? 10 : 5,
       hovertemplate: "<b>%{x}</b><br>사용률: %{y:.1f}%<extra></extra>",
     };
   });
