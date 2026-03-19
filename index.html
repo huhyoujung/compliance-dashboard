@@ -45,22 +45,32 @@
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--c-bg); color: var(--c-text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
     /* ── 레이아웃 ── */
-    .layout { display: flex; min-height: 100vh; }
-
-    .sidebar {
-      width: 260px; min-width: 220px;
-      background: var(--c-surface);
-      border-right: 1px solid var(--c-border);
-      padding: 28px 20px;
-      display: flex; flex-direction: column; gap: 20px;
-      flex-shrink: 0;
-    }
-    .sidebar h2 { font-size: 11px; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
-    .sidebar-brand { font-size: 15px; font-weight: 700; color: var(--c-primary); letter-spacing: -.01em; }
-
-    .main { flex: 1; padding: 32px 36px; overflow-x: hidden; }
+    .layout { display: flex; flex-direction: column; min-height: 100vh; }
+    .main { flex: 1; padding: 32px 36px; overflow-x: hidden; max-width: 1200px; margin: 0 auto; width: 100%; }
     h1 { font-size: 24px; font-weight: 700; color: var(--c-text); letter-spacing: -.02em; margin-bottom: 4px; }
     .caption { font-size: 13px; color: var(--c-text-muted); margin-bottom: 24px; }
+
+    /* ── 헤더 ── */
+    .top-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 36px; background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
+    .top-header-brand { font-size: 15px; font-weight: 700; color: var(--c-primary); }
+    .top-header-right { display: flex; align-items: center; gap: 12px; }
+
+    /* ── 필터 바 ── */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); }
+    .filter-bar .filter-label { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+    .filter-bar select { border: 1px solid var(--c-border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: var(--c-surface); color: var(--c-text); cursor: pointer; }
+    .filter-bar select:focus { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+    .filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border: 1px solid var(--c-border); border-radius: 20px; background: var(--c-surface); font-size: 12px; cursor: pointer; color: var(--c-text-secondary); transition: all .15s; font-weight: 500; user-select: none; }
+    .filter-chip:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
+    .filter-chip.active { background: var(--c-primary); color: #fff; border-color: var(--c-primary); font-weight: 600; }
+    .filter-chip input[type="checkbox"] { display: none; }
+    .filter-divider { width: 1px; height: 24px; background: var(--c-border); margin: 0 4px; }
+
+    /* ── 푸터 ── */
+    .site-footer { padding: 16px 36px; background: var(--c-surface); border-top: 1px solid var(--c-border); display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--c-text-muted); }
+    .footer-links { display: flex; gap: 16px; }
+    .footer-links a { color: var(--c-text-secondary); text-decoration: none; transition: color .15s; }
+    .footer-links a:hover { color: var(--c-primary); }
 
     /* ── 카드 ── */
     .cards { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
@@ -75,22 +85,13 @@
     .card-value.danger { color: var(--c-danger); }
     .card-value.success { color: var(--c-success); }
 
-    /* ── 필터 ── */
-    .filter-group { display: flex; flex-direction: column; gap: 8px; }
-    .filter-group label { font-size: 12px; font-weight: 600; color: var(--c-text-secondary); }
-    select, .multiselect-wrap { width: 100%; border: 1px solid var(--c-border); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 13px; background: var(--c-surface); transition: border-color .15s; }
-    select:focus, .multiselect-wrap:focus-within { border-color: var(--c-primary); outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
-    .multiselect-wrap { max-height: 180px; overflow-y: auto; }
-    .multiselect-wrap label { display: flex; align-items: center; gap: 8px; font-weight: 400; padding: 4px 0; cursor: pointer; font-size: 13px; color: var(--c-text-secondary); }
-    .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--c-text-secondary); }
-
     /* ── 버튼 ── */
     button.refresh-btn {
-      width: 100%; padding: 10px; border: none; border-radius: var(--radius-sm);
-      background: var(--c-primary); color: #fff; font-size: 13px; cursor: pointer; font-weight: 600;
-      transition: background .15s;
+      padding: 7px 16px; border: 1px solid var(--c-border); border-radius: 6px;
+      background: var(--c-surface); color: var(--c-text-secondary); font-size: 12px; cursor: pointer; font-weight: 500;
+      transition: all .15s;
     }
-    button.refresh-btn:hover { background: var(--c-primary-hover); }
+    button.refresh-btn:hover { background: var(--c-primary-light); border-color: var(--c-primary-border); color: var(--c-primary); }
 
     /* ── 탭 ── */
     .tabs { display: flex; gap: 4px; margin-bottom: 24px; flex-wrap: wrap; background: var(--c-border-light); padding: 4px; border-radius: var(--radius-sm); }
@@ -187,9 +188,10 @@
 
     /* ── 반응형 ── */
     @media (max-width: 700px) {
-      .layout { flex-direction: column; }
-      .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--c-border); }
       .main { padding: 20px 16px; }
+      .top-header { padding: 12px 16px; }
+      .site-footer { padding: 12px 16px; flex-direction: column; gap: 8px; text-align: center; }
+      .filter-bar { gap: 8px; padding: 10px 12px; }
     }
   </style>
 </head>
@@ -198,40 +200,42 @@
 <div id="spinner"><div class="spinner-content"><div><span class="spinner-dot"></span><span class="spinner-dot"></span><span class="spinner-dot"></span></div><div class="spinner-text">데이터를 불러오는 중...</div></div></div>
 
 <div class="layout">
-  <!-- 사이드바 -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">💊 순응률 대시보드</div>
-
-    <button class="refresh-btn" onclick="loadData(true)">데이터 새로고침</button>
-
-    <hr style="border:none;border-top:1px solid var(--c-border)">
-    <h2>필터</h2>
-
-    <div class="filter-group">
-      <label>기관 선택</label>
-      <div class="multiselect-wrap" id="hospital-filter"></div>
+  <!-- 헤더 -->
+  <header class="top-header">
+    <div class="top-header-brand">💊 순응률 대시보드</div>
+    <div class="top-header-right">
+      <div class="caption" id="caption" style="margin-bottom:0">-</div>
+      <button class="refresh-btn" onclick="loadData(true)">↻ 새로고침</button>
     </div>
-
-    <label class="checkbox-row">
-      <input type="checkbox" id="no-use-only" onchange="applyFilters()">
-      미사용자만 보기
-    </label>
-
-    <label class="checkbox-row">
-      <input type="checkbox" id="yellow-card-only" onchange="applyFilters()">
-      옐로카드 있는 환자만 보기
-    </label>
-
-    <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--c-border);display:flex;flex-direction:column;gap:6px;font-size:12px">
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer" style="color:var(--c-primary);text-decoration:none">📄 환자 데이터 시트 ↗</a>
-      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer" style="color:var(--c-primary);text-decoration:none">📄 세션 기록 시트 ↗</a>
-    </div>
-  </aside>
+  </header>
 
   <!-- 메인 -->
   <main class="main">
     <h1>확증임상 순응률 대시보드</h1>
-    <div class="caption" id="caption">-</div>
+
+    <!-- 통합 필터 바 -->
+    <div class="filter-bar" id="filter-bar">
+      <span class="filter-label">기관</span>
+      <select id="hospital-filter" onchange="applyFilters()">
+        <option value="all">전체 기관</option>
+      </select>
+      <div class="filter-divider"></div>
+      <span class="filter-label">상태</span>
+      <select id="status-filter" onchange="applyFilters()">
+        <option value="all">전체</option>
+        <option value="active">사용중</option>
+        <option value="ended">만료됨</option>
+      </select>
+      <div class="filter-divider"></div>
+      <label class="filter-chip" id="chip-nouse">
+        <input type="checkbox" id="no-use-only" onchange="toggleChip('chip-nouse'); applyFilters()">
+        미사용자만
+      </label>
+      <label class="filter-chip" id="chip-yellow">
+        <input type="checkbox" id="yellow-card-only" onchange="toggleChip('chip-yellow'); applyFilters()">
+        옐로카드만
+      </label>
+    </div>
 
     <!-- 요약 카드 -->
     <div class="sub-tabs" style="margin-bottom:8px">
@@ -269,15 +273,6 @@
     </div>
 
     <div id="tab-table">
-      <div class="sub-tabs" id="table-sub-tabs">
-        <div class="sub-tab-group">
-          <span class="sub-tab-label">상태:</span>
-          <button class="sub-tab-btn active" onclick="switchTableStatus('all', this)">전체</button>
-          <button class="sub-tab-btn" onclick="switchTableStatus('active', this)">사용중</button>
-          <button class="sub-tab-btn" onclick="switchTableStatus('ended', this)">만료됨</button>
-        </div>
-        <div class="sub-tab-group" id="hospital-sub-tabs"></div>
-      </div>
       <div class="table-wrap">
         <table id="patient-table">
           <thead>
@@ -328,6 +323,15 @@
       </div>
     </div>
   </main>
+
+  <!-- 푸터 -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=662044972#gid=662044972" target="_blank" rel="noopener noreferrer">📄 환자 데이터 시트 ↗</a>
+      <a href="https://docs.google.com/spreadsheets/d/1Ao0BR5ex4orskBqoJYskLTgl6FGzLxNCQr8nJ-nK1Mw/edit?gid=12940537#gid=12940537" target="_blank" rel="noopener noreferrer">📄 세션 기록 시트 ↗</a>
+    </div>
+    <span>© 2025 순응률 대시보드</span>
+  </footer>
 </div>
 
 <div id="mini-heatmap"></div>
@@ -401,7 +405,7 @@ function parseSessionCsv(csvText) {
   const headers = rows[1].map(h => h.trim());
   const dataRows = rows.slice(2);
   const ci = key => headers.indexOf(key);
-  const map = {};  // { user_id: { "2025-03-05": [sessionId, ...] } }
+  const map = {};  // { user_id: { "YYYY-MM-DD": [{sid, kstTime}, ...] } }
   dataRows.forEach(r => {
     const uid = (r[ci("user_id")] || "").trim();
     const createdAt = (r[ci("created_at")] || "").trim();
@@ -412,9 +416,10 @@ function parseSessionCsv(csvText) {
     if (isNaN(utc)) return;
     const kst = new Date(utc.getTime() + 9 * 3600000);
     const dayStr = kst.toISOString().slice(0, 10);  // "YYYY-MM-DD" KST
+    const kstTime = kst.toISOString().slice(11, 16);  // "HH:MM" KST
     if (!map[uid]) map[uid] = {};
     if (!map[uid][dayStr]) map[uid][dayStr] = [];
-    if (sid) map[uid][dayStr].push(sid);
+    if (sid) map[uid][dayStr].push({ sid, kstTime });
   });
   return map;
 }
@@ -455,18 +460,18 @@ function parseCsv(csvText) {
 
       // used_days: sessionMap 날짜 → day number 변환
       const rawSessions = sessionMap[userId] || {};
-      const userSessions = {};  // { dayNumber: [sessionId, ...] }
+      const userSessions = {};  // { dayNumber: [{sid, kstTime}, ...] }
       if (start_dt) {
         const anchor = new Date(start_dt);
         anchor.setHours(12, 0, 0, 0);
-        Object.entries(rawSessions).forEach(([dateStr, sids]) => {
+        Object.entries(rawSessions).forEach(([dateStr, entries]) => {
           const sessDate = new Date(dateStr + "T12:00:00");
           if (isNaN(sessDate)) return;
           const diffMs = sessDate - anchor;
           if (diffMs < 0) return;
           const dayNum = Math.floor(diffMs / 86400000);
           if (dayNum >= 0 && dayNum < MAX_DAYS) {
-            userSessions[dayNum] = (userSessions[dayNum] || []).concat(sids);
+            userSessions[dayNum] = (userSessions[dayNum] || []).concat(entries);
           }
         });
       }
@@ -541,33 +546,34 @@ async function loadData(forceRefresh = false) {
 // ── 기관 필터 빌드 ───────────────────────────────────────────────────────
 function buildHospitalFilter() {
   const hospitals = [...new Set(allRows.map(r => r.hospital).filter(Boolean))].sort();
-  const wrap = document.getElementById("hospital-filter");
-  wrap.innerHTML = hospitals.map(h =>
-    `<label>
-      <input type="checkbox" class="hospital-cb" value="${h}" checked onchange="applyFilters()">
-      ${h}
-    </label>`
-  ).join("");
+  const sel = document.getElementById("hospital-filter");
+  sel.innerHTML = '<option value="all">전체 기관</option>' +
+    hospitals.map(h => `<option value="${h}">${h}</option>`).join("");
 }
 
-function getSelectedHospitals() {
-  return [...document.querySelectorAll(".hospital-cb:checked")].map(cb => cb.value);
+function toggleChip(chipId) {
+  document.getElementById(chipId).classList.toggle("active");
 }
 
 // ── 필터 적용 ────────────────────────────────────────────────────────────
 function applyFilters() {
-  const selectedHospitals = getSelectedHospitals();
+  const hospitalVal = document.getElementById("hospital-filter").value;
+  const statusVal = document.getElementById("status-filter").value;
   const noUseOnly = document.getElementById("no-use-only").checked;
   const yellowOnly = document.getElementById("yellow-card-only").checked;
 
+  tableStatusTab = statusVal;
+  tableHospitalTab = hospitalVal;
+
   filteredRows = allRows.filter(r => {
-    if (selectedHospitals.length && !selectedHospitals.includes(r.hospital)) return false;
+    if (hospitalVal !== "all" && r.hospital !== hospitalVal) return false;
+    if (statusVal === "active" && r.is_ended) return false;
+    if (statusVal === "ended" && !r.is_ended) return false;
     if (noUseOnly && r.used_days > 0) return false;
     if (yellowOnly && r.yellow_cards === 0) return false;
     return true;
   });
 
-  buildHospitalSubTabs();
   renderCards();
   renderTable();
   renderHeatmap();
@@ -612,32 +618,7 @@ function rowBgColor(compliance) {
   return "";
 }
 
-function switchTableStatus(val, btn) {
-  tableStatusTab = val;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderTable();
-}
 
-function switchTableHospital(val, btn) {
-  tableHospitalTab = val;
-  btn.parentElement.querySelectorAll(".sub-tab-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  renderTable();
-}
-
-function buildHospitalSubTabs() {
-  const hospitals = [...new Set(filteredRows.map(r => r.hospital))].sort();
-  const container = document.getElementById("hospital-sub-tabs");
-  let html = '<span class="sub-tab-label">기관:</span>';
-  html += `<button class="sub-tab-btn${tableHospitalTab === "all" ? " active" : ""}" onclick="switchTableHospital('all', this)">전체</button>`;
-  hospitals.forEach(h => {
-    const active = tableHospitalTab === h ? " active" : "";
-    const safeH = h.replace(/'/g, "\\'");
-    html += `<button class="sub-tab-btn${active}" onclick="switchTableHospital('${safeH}', this)">${h}</button>`;
-  });
-  container.innerHTML = html;
-}
 
 function sortTable(key) {
   if (sortKey === key) sortAsc = !sortAsc;
@@ -647,9 +628,6 @@ function sortTable(key) {
 
 function renderTable() {
   let rows = [...filteredRows];
-  if (tableStatusTab === "active") rows = rows.filter(r => !r.is_ended);
-  else if (tableStatusTab === "ended") rows = rows.filter(r => r.is_ended);
-  if (tableHospitalTab !== "all") rows = rows.filter(r => r.hospital === tableHospitalTab);
 
   rows.sort((a, b) => {
     let va = a[sortKey], vb = b[sortKey];
@@ -698,7 +676,8 @@ function buildMiniHeatmapHTML(r) {
     if (d >= r.elapsed_days) {
       cells += `<div class="mh-cell future">${label}</div>`;
     } else if (daySessions.length > 0) {
-      cells += `<div class="mh-cell used">${label}</div>`;
+      const times = daySessions.map(e => e.kstTime + ' KST').join(', ');
+      cells += `<div class="mh-cell used" title="${times}">${label}</div>`;
     } else {
       cells += `<div class="mh-cell unused">${label}</div>`;
     }
@@ -773,8 +752,11 @@ function renderHeatmap() {
         rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미경과`);
       } else if (hasSession) {
         rowVals.push(1);
-        const sidStr = daySessions.map(s => s.length > 5 ? "*****" + s.slice(5) : "*****").join(", ");
-        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidStr}`);
+        const sidLines = daySessions.map(e => {
+          const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
+          return `${masked} (${e.kstTime} KST)`;
+        }).join(", ");
+        rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 사용<br>세션: ${sidLines}`);
       } else {
         rowVals.push(0);
         rowHover.push(`${r.subject_id} | ${label}일차 (${dateStr}) | 미사용`);
