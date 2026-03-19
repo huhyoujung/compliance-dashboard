@@ -687,7 +687,7 @@ function renderHeatmap() {
       const nextDt = r.start_dt ? new Date(r.start_dt.getTime() + (d + 1) * 86400000) : null;
       const pad2 = n => String(n).padStart(2, '0');
       const fmtDt = dt => dt ? `${pad2(dt.getMonth()+1)}/${pad2(dt.getDate())}` : '?';
-      const dayRange = dayDt && nextDt ? `${fmtDt(dayDt)} 00:00 ~ ${fmtDt(nextDt)} 00:00 KST` : '?';
+      const dayRange = dayDt && nextDt ? `${fmtDt(dayDt)} 12:00 ~ ${fmtDt(nextDt)} 11:59 KST` : '?';
       const label = d + 1;
       const daySessions = sess[d] || [];
       const hasSession = daySessions.length > 0;
