@@ -49,25 +49,44 @@ def load_data():
 
     # Session Attend Record 가져오기
     try:
-        df_sess = pd.read_csv(SESSION_URL, dtype=str)
+        df_sess = pd.read_csv(SESSION_URL, header=1, dtype=str)
         df_sess.columns = df_sess.columns.str.strip()
-        df_sess["session_day"] = pd.to_numeric(df_sess["session_day"], errors="coerce")
         df_sess["user_id_sess"] = df_sess["user_id"].str.strip()
+        df_sess["session_day"] = df_sess["session_day"].str.strip()
     except Exception:
         df_sess = pd.DataFrame(columns=["user_id_sess", "session_day", "counted_session_id"])
 
-    # 세션 기반 사용일 수
-    session_day_counts = df_sess.groupby("user_id_sess")["session_day"].nunique()
-    df["used_days"] = df["user_id"].map(session_day_counts).fillna(0).astype(int)
+    # 세션 날짜 → day number 변환을 위해 start_dt 맵 구축
+    start_dt_map = df.set_index("user_id")["start_dt"].to_dict()
 
-    # 세션 맵: user_id → { day: [session_id, ...] }
+    # 세션 맵: user_id → { dayNumber: [session_id, ...] }
     session_map = {}
+    used_days_counter = {}  # user_id → set of day numbers
     for _, sr in df_sess.iterrows():
         uid = sr["user_id_sess"]
-        day = sr["session_day"]
+        date_str = sr["session_day"]
         sid = sr.get("counted_session_id", "")
-        if pd.notna(day):
-            session_map.setdefault(uid, {}).setdefault(int(day), []).append(str(sid).strip() if pd.notna(sid) else "")
+        if not isinstance(uid, str) or not isinstance(date_str, str) or not date_str:
+            continue
+        user_start = start_dt_map.get(uid)
+        if pd.isna(user_start) or user_start is pd.NaT:
+            continue
+        try:
+            sess_date = pd.Timestamp(date_str)
+        except Exception:
+            continue
+        anchor = pd.Timestamp(user_start.date()) + pd.Timedelta(hours=12)
+        diff = (pd.Timestamp(sess_date.date()) + pd.Timedelta(hours=12) - anchor).total_seconds()
+        if diff < 0:
+            continue
+        day_num = int(diff // 86400) + 1
+        if day_num < 1 or day_num > 28:
+            continue
+        sid_str = str(sid).strip() if pd.notna(sid) else ""
+        session_map.setdefault(uid, {}).setdefault(day_num, []).append(sid_str)
+        used_days_counter.setdefault(uid, set()).add(day_num)
+
+    df["used_days"] = df["user_id"].map(lambda u: len(used_days_counter.get(u, set()))).astype(int)
 
     def make_subject_id(row):
         prefix = HOSPITAL_PREFIX.get(row["hospital"])

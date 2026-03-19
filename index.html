@@ -314,16 +314,22 @@ function calcCompliance(usedDays, elapsedDays) {
 
 // ── Session Attend Record 파싱 ───────────────────────────────────────────
 function parseSessionCsv(csvText) {
-  const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-  const map = {};
-  result.data.forEach(row => {
-    const uid = (row["user_id"] || "").trim();
-    const day = parseInt(row["session_day"], 10);
-    const sid = (row["counted_session_id"] || "").trim();
-    if (!uid || isNaN(day)) return;
+  const result = Papa.parse(csvText, { header: false, skipEmptyLines: true });
+  const rows = result.data;
+  // Row 0: 메타헤더(스킵), Row 1: 컬럼명, Row 2+: 데이터
+  if (rows.length < 3) return {};
+  const headers = rows[1].map(h => h.trim());
+  const dataRows = rows.slice(2);
+  const ci = key => headers.indexOf(key);
+  const map = {};  // { user_id: { "2025-03-05": [sessionId, ...] } }
+  dataRows.forEach(r => {
+    const uid = (r[ci("user_id")] || "").trim();
+    const dayStr = (r[ci("session_day")] || "").trim();
+    const sid = (r[ci("counted_session_id")] || "").trim();
+    if (!uid || !dayStr) return;
     if (!map[uid]) map[uid] = {};
-    if (!map[uid][day]) map[uid][day] = [];
-    if (sid) map[uid][day].push(sid);
+    if (!map[uid][dayStr]) map[uid][dayStr] = [];
+    if (sid) map[uid][dayStr].push(sid);
   });
   return map;
 }
@@ -362,10 +368,24 @@ function parseCsv(csvText) {
         endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
       }
 
-      // used_days: sessionMap 기반 (실제 세션 일수)
-      const userSessions = sessionMap[userId] || {};
-      const sessionDays = Object.keys(userSessions).map(Number).filter(d => d >= 1 && d <= MAX_DAYS);
-      const used_days = sessionDays.length;
+      // used_days: sessionMap 날짜 → day number 변환
+      const rawSessions = sessionMap[userId] || {};
+      const userSessions = {};  // { dayNumber: [sessionId, ...] }
+      if (start_dt) {
+        const anchor = new Date(start_dt);
+        anchor.setHours(12, 0, 0, 0);
+        Object.entries(rawSessions).forEach(([dateStr, sids]) => {
+          const sessDate = new Date(dateStr + "T12:00:00");
+          if (isNaN(sessDate)) return;
+          const diffMs = sessDate - anchor;
+          if (diffMs < 0) return;
+          const dayNum = Math.floor(diffMs / 86400000) + 1;
+          if (dayNum >= 1 && dayNum <= MAX_DAYS) {
+            userSessions[dayNum] = (userSessions[dayNum] || []).concat(sids);
+          }
+        });
+      }
+      const used_days = Object.keys(userSessions).length;
 
       const ref = (end_dt && end_dt < now) ? end_dt : now;
       const elapsed_days = start_dt ? calcElapsedDays(start_dt, ref) : 0;
