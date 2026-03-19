@@ -603,11 +603,10 @@ function renderCards() {
 }
 
 // ── 테이블 ───────────────────────────────────────────────────────────────
-function rowBgColor(compliance) {
-  if (compliance === null) return "";
-  if (compliance === 0)  return "background:#fef2f2";
-  if (compliance < 50)   return "background:#fffbeb";
-  if (compliance >= 80)  return "background:#ecfdf5";
+function rowBgColor(yellowCards) {
+  if (yellowCards >= 3) return "background:#fef2f2";  // 진한 빨강 배경
+  if (yellowCards === 2) return "background:#fff1f2"; // 중간 빨강 배경
+  if (yellowCards === 1) return "background:#fff7ed"; // 연한 주황 배경
   return "";
 }
 
@@ -637,7 +636,7 @@ function renderTable() {
   tbody.innerHTML = rows.map(r => {
     const comp = r.compliance !== null ? r.compliance.toFixed(1) + "%" : "N/A";
     const endedBadge = r.is_ended ? '<span class="badge-ended">종료</span>' : "";
-    const bg = rowBgColor(r.compliance);
+    const bg = rowBgColor(r.yellow_cards);
     const ycDisplay = r.yellow_cards > 0
       ? `<span style="color:#ef4444;font-weight:700">${r.yellow_cards}</span>`
       : `<span style="color:#94a3b8">0</span>`;
@@ -726,7 +725,7 @@ function renderHeatmap() {
 
   const matrix = [];
   const hoverTexts = [];
-  const yLabels = rows.map(r => r.subject_id);
+  const yLabels = rows.map(r => r.start_str ? `${r.subject_id} (${r.start_str})` : r.subject_id);
 
   rows.forEach(r => {
     const rowVals  = [];
@@ -781,7 +780,7 @@ function renderHeatmap() {
     hovertemplate: "%{text}<extra></extra>",
     xgap: 2, ygap: 2,
   }], {
-    margin: {l: 100, r: 20, t: 40, b: 60},
+    margin: {l: 160, r: 20, t: 40, b: 60},
     height,
     xaxis: { side: "top", title: "처방 일차" },
     yaxis: { autorange: "reversed" },
