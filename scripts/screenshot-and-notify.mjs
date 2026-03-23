@@ -26,7 +26,21 @@ const today = new Date().toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", y
 
 async function takeScreenshots() {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 900 },
+    bypassCSP: true,
+  });
+  // 브라우저 캐시 비활성화 → 항상 최신 HTML/CSV를 가져오도록
+  await context.route("**/*", (route) => {
+    route.continue({
+      headers: {
+        ...route.request().headers(),
+        "cache-control": "no-cache, no-store",
+        pragma: "no-cache",
+      },
+    });
+  });
+  const page = await context.newPage();
 
   // 1) 페이지 접속
   await page.goto(DASHBOARD_URL, { waitUntil: "networkidle" });
@@ -37,8 +51,12 @@ async function takeScreenshots() {
 
   // 3) 데이터 로딩 대기 (테이블 행이 나타날 때까지)
   await page.waitForSelector("#table-body tr", { timeout: 30000 });
-  // 추가 렌더링 대기
-  await page.waitForTimeout(2000);
+
+  // 강제로 최신 데이터 다시 로드 (캐시 무시)
+  await page.evaluate(() => window.loadData(true));
+  await page.waitForTimeout(3000);
+  // 테이블이 다시 렌더링될 때까지 대기
+  await page.waitForSelector("#table-body tr", { timeout: 15000 });
 
   const outDir = path.resolve("screenshots");
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
