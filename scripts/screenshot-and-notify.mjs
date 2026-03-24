@@ -29,6 +29,7 @@ async function takeScreenshots() {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
     bypassCSP: true,
+    timezoneId: "Asia/Seoul",
   });
   // 브라우저 캐시 비활성화 → 항상 최신 HTML/CSV를 가져오도록
   await context.route("**/*", (route) => {
