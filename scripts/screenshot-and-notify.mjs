@@ -53,10 +53,18 @@ async function takeScreenshots() {
   await page.waitForSelector("#table-body tr", { timeout: 30000 });
 
   // 강제로 최신 데이터 다시 로드 (캐시 무시)
-  await page.evaluate(() => window.loadData(true));
-  await page.waitForTimeout(3000);
-  // 테이블이 다시 렌더링될 때까지 대기
-  await page.waitForSelector("#table-body tr", { timeout: 15000 });
+  // 먼저 페이지가 완전히 안정화될 때까지 대기
+  await page.waitForLoadState("networkidle");
+  try {
+    await page.evaluate(() => window.loadData(true));
+    await page.waitForTimeout(3000);
+    await page.waitForSelector("#table-body tr", { timeout: 15000 });
+  } catch (e) {
+    // context destroyed 등 간헐적 타이밍 이슈 → 이미 첫 로드에서 캐시 무시 헤더로 최신 데이터 로드됨
+    console.log("⚠️ loadData(true) 스킵 (첫 로드 데이터 사용):", e.message);
+    await page.waitForLoadState("networkidle");
+    await page.waitForSelector("#table-body tr", { timeout: 15000 });
+  }
 
   const outDir = path.resolve("screenshots");
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
