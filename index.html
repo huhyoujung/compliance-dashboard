@@ -11,6 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -280,7 +283,13 @@
             <option value="yellow-desc">미달 많은 순</option>
             <option value="start-asc">처방시작일 순</option>
           </select>
-          <button onclick="exportPrintPDF()" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors no-print">📄 PDF 내보내기</button>
+          <div class="relative no-print" id="pdf-dropdown-wrapper">
+            <button onclick="togglePdfDropdown()" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors">📄 PDF 내보내기 <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg></button>
+            <div id="pdf-dropdown-menu" class="hidden absolute right-0 mt-1 w-52 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 py-1">
+              <button onclick="exportPrintPDF(); closePdfDropdown()" class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50">📄 현재 뷰 PDF 다운로드</button>
+              <button onclick="exportAllHospitalPDFs(); closePdfDropdown()" class="w-full text-left px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50">📦 기관 일괄 다운로드 (ZIP)</button>
+            </div>
+          </div>
         </div>
       </div>
       <div id="print-report-content" class="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 overflow-x-auto"></div>
@@ -1217,6 +1226,96 @@ function exportPrintPDF() {
   document.title = `BELL-001-S-KR-003_사용현황_${hospName}_${ts}`;
   window.print();
   document.title = origTitle;
+}
+
+/* ── PDF 드롭다운 ───────────────────────────────────────────────────── */
+function togglePdfDropdown() {
+  document.getElementById('pdf-dropdown-menu').classList.toggle('hidden');
+}
+function closePdfDropdown() {
+  document.getElementById('pdf-dropdown-menu').classList.add('hidden');
+}
+document.addEventListener('click', e => {
+  const w = document.getElementById('pdf-dropdown-wrapper');
+  if (w && !w.contains(e.target)) closePdfDropdown();
+});
+
+/* ── 기관 일괄 PDF → ZIP 다운로드 ──────────────────────────────────── */
+async function exportAllHospitalPDFs() {
+  const hospitals = [...new Set(allRows.map(r => r.hospital).filter(Boolean))].sort();
+  if (hospitals.length === 0) { alert('데이터가 없습니다.'); return; }
+
+  const btn = document.querySelector('#pdf-dropdown-wrapper > button');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 생성 중...';
+
+  const { jsPDF } = window.jspdf;
+  const zip = new JSZip();
+  const now = new Date();
+  const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const sel = document.getElementById('print-hospital-filter');
+  const origHospVal = sel.value;
+
+  const container = document.getElementById('print-report-content');
+
+  for (const hosp of hospitals) {
+    sel.value = hosp;
+    renderPrintReport();
+    await new Promise(r => setTimeout(r, 100));
+
+    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+
+    const pdfW = 297;
+    const pdfH = 210;
+    const margin = 10;
+    const contentW = pdfW - margin * 2;
+    const contentH = contentW * (imgH / imgW);
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    if (contentH <= pdfH - margin * 2) {
+      doc.addImage(imgData, 'PNG', margin, margin, contentW, contentH);
+    } else {
+      const pageContentH = pdfH - margin * 2;
+      const pxPerMm = imgW / contentW;
+      let yOffsetPx = 0;
+      let page = 0;
+      while (yOffsetPx < imgH) {
+        if (page > 0) doc.addPage();
+        const sliceH = Math.min(pageContentH * pxPerMm, imgH - yOffsetPx);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = imgW;
+        sliceCanvas.height = sliceH;
+        sliceCanvas.getContext('2d').drawImage(canvas, 0, yOffsetPx, imgW, sliceH, 0, 0, imgW, sliceH);
+        const sliceImg = sliceCanvas.toDataURL('image/png');
+        const sliceMmH = sliceH / pxPerMm;
+        doc.addImage(sliceImg, 'PNG', margin, margin, contentW, sliceMmH);
+        yOffsetPx += sliceH;
+        page++;
+      }
+    }
+
+    const fileName = `BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`;
+    zip.file(fileName, doc.output('arraybuffer'));
+  }
+
+  sel.value = origHospVal;
+  renderPrintReport();
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `BELL-001-S-KR-003_사용현황_전체기관_${ts}.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  btn.disabled = false;
+  btn.innerHTML = origText;
 }
 
 // ── 탭 전환 ──────────────────────────────────────────────────────────────
