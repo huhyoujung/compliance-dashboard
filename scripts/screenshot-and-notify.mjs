@@ -70,7 +70,11 @@ async function takeScreenshots() {
   const outDir = path.resolve("screenshots");
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 
-  // 4) 호버 상태 해제 → 환자 테이블 스크린샷
+  // 4) 상태 필터를 "사용중"으로 설정
+  await page.selectOption("#status-filter", "active");
+  await page.waitForTimeout(1000);
+
+  // 5) 호버 상태 해제 → 환자 테이블 스크린샷
   await page.mouse.move(0, 0);
   await page.waitForTimeout(300);
   const tableEl = await page.$("#tab-table");

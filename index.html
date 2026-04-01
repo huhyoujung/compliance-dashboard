@@ -274,6 +274,11 @@
           <div class="text-xs text-neutral-400 mt-1">A4 가로 인쇄에 최적화된 레이아웃입니다. 흑백 인쇄를 지원합니다.</div>
         </div>
         <div class="flex items-center gap-2 no-print">
+          <select id="print-status-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
+            <option value="active" selected>사용중</option>
+            <option value="ended">만료됨</option>
+            <option value="all">전체</option>
+          </select>
           <select id="print-hospital-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
             <option value="all">전체 기관</option>
           </select>
@@ -531,20 +536,22 @@ function parseCsv(csvText) {
       }
       const is_ended = end_dt && end_dt < now;
       const ref = is_ended ? end_dt : now;
-      // 만료된 환자는 정확히 MAX_DAYS (end_dt 11:59:59 vs anchor 12:00:00 반올림 오차 방지)
+      // elapsed_days: 오늘 포함 (히트맵 렌더링용, 1-based)
       const elapsed_days = start_dt ? (is_ended ? MAX_DAYS : calcElapsedDays(start_dt, ref)) : 0;
-      const used_days = Math.min(Object.keys(userSessions).length, elapsed_days);
-      const compVal = calcCompliance(used_days, elapsed_days);
+      // completedDays: 완료된 일수만 (순응도 계산용, 오늘 제외)
+      const completedDays = is_ended ? MAX_DAYS : Math.max(elapsed_days - 1, 0);
+      const used_days = Math.min(Object.keys(userSessions).length, completedDays);
+      const compVal = calcCompliance(used_days, completedDays);
 
-      // 옐로카드: 체크포인트별 목표 미달 누적 (해당 시점까지의 누적 사용일 기준)
+      // 옐로카드: 체크포인트별 목표 미달 누적 (완료된 일수 기준, 오늘 제외)
       const sessionDayNums = Object.keys(userSessions).map(Number);
       const yellow_cards = YELLOW_CARD_RULES.reduce((cnt, rule) => {
-        if (elapsed_days < rule.day) return cnt;  // 아직 미도달
+        if (completedDays < rule.day) return cnt;  // 아직 미도달
         const usedAtCheckpoint = sessionDayNums.filter(d => d < rule.day).length;
         return usedAtCheckpoint < rule.target ? cnt + 1 : cnt;
       }, 0);
 
-      const weeklyResult = calcWeeklyCompliance(userSessions, elapsed_days);
+      const weeklyResult = calcWeeklyCompliance(userSessions, completedDays);
 
       return {
         subject_id,
@@ -721,19 +728,25 @@ function buildMiniHeatmapHTML(r) {
   const weekMap = {};
   ws.forEach(w => { weekMap[w.week] = w; });
   let cells = '';
-  // 오늘이 몇 일차인지 계산
-  const todayDayNum = r.start_dt ? Math.floor((new Date() - new Date(r.start_dt.getTime())) / 86400000) : -1;
+  // 오늘이 몇 일차인지 계산 (1-based)
+  const todayLabel = r.start_dt ? calcElapsedDays(r.start_dt, new Date()) : -1;
   for (let d = 0; d < MAX_DAYS; d++) {
     const daySessions = sess[d] || [];
     const label = d + 1;
-    const isToday = d === todayDayNum ? ' today' : '';
-    if (d >= r.elapsed_days) {
-      cells += `<div class="mh-cell future${isToday}">${label}</div>`;
+    const isTodayCell = label === todayLabel && !r.is_ended;
+    if (d >= r.elapsed_days || isTodayCell) {
+      // 오늘 셀은 아직 하루가 안 끝났으므로 미경과(회색)로 표시
+      if (isTodayCell && daySessions.length > 0) {
+        const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
+        cells += `<div class="mh-cell used today" title="${times}">${label}</div>`;
+      } else {
+        cells += `<div class="mh-cell future${isTodayCell ? ' today' : ''}">${label}</div>`;
+      }
     } else if (daySessions.length > 0) {
       const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
-      cells += `<div class="mh-cell used${isToday}" title="${times}">${label}</div>`;
+      cells += `<div class="mh-cell used" title="${times}">${label}</div>`;
     } else {
-      cells += `<div class="mh-cell unused${isToday}">${label}</div>`;
+      cells += `<div class="mh-cell unused">${label}</div>`;
     }
     // 매 7일 끝(6,13,20,27)에 주별 순응도 배지 삽입
     if ((d + 1) % 7 === 0) {
@@ -839,6 +852,9 @@ function renderHeatmap() {
           return `🔑 ${masked} (${dateTag} ${e.kstTime || ''} KST)`;
         }).join("<br>");
         rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>✅ 사용<br>${sidLines}`);
+      } else if (isToday && !r.is_ended) {
+        rowVals.push(2);
+        rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>⬜ 오늘 (미경과)`);
       } else {
         rowVals.push(0);
         rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>❌ 미사용`);
@@ -1137,7 +1153,13 @@ function renderPrintReport() {
     hospitals.map(h => `<option value="${h}"${h === curVal ? ' selected' : ''}>${h}</option>`).join('');
 
   const hospitalVal = sel.value;
-  let rows = allRows.filter(r => hospitalVal === 'all' || r.hospital === hospitalVal);
+  const printStatusVal = document.getElementById('print-status-filter').value;
+  let rows = allRows.filter(r => {
+    if (hospitalVal !== 'all' && r.hospital !== hospitalVal) return false;
+    if (printStatusVal === 'active' && r.is_ended) return false;
+    if (printStatusVal === 'ended' && !r.is_ended) return false;
+    return true;
+  });
   const sortVal = document.getElementById('print-sort-filter').value;
   const hospCmp = (a, b) => (a.hospital < b.hospital ? -1 : a.hospital > b.hospital ? 1 : 0);
   switch (sortVal) {
@@ -1200,7 +1222,8 @@ function renderPrintReport() {
         const dayIdx = w * 7 + d;
         const daySessions = sess[dayIdx] || [];
         let cls, content = '';
-        if (dayIdx >= r.elapsed_days) { cls = 'future'; }
+        const isPrintToday = (dayIdx + 1) === calcElapsedDays(r.start_dt, new Date()) && !r.is_ended;
+        if (dayIdx >= r.elapsed_days || isPrintToday) { cls = daySessions.length > 0 ? 'used' : 'future'; }
         else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
         const weekBorder = d === 0 && w > 0 ? 'border-left:2px solid #d4d4d4;' : '';
