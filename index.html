@@ -501,11 +501,14 @@ function parseCsv(csvText) {
       const startRaw = (r[idx("시작일자")] || "").trim();
       const start_dt = startRaw ? new Date(startRaw) : null;
 
-      // 만료: start_dt + 28일 11:59:59
+      // 만료: anchor(시작일 정오) + (MAX_DAYS+1)일 정오 직전 (익일 정오 경계 정책)
+      // 예) 3/4 10:41 시작 → anchor 3/4 12:00 → 28일차 마지막 = 4/2 11:59:59
       let end_dt = null;
       let endRaw = "";
       if (start_dt) {
-        end_dt = new Date(start_dt.getTime() + 28 * 86400000);
+        const endAnchor = new Date(start_dt);
+        endAnchor.setHours(12, 0, 0, 0);
+        end_dt = new Date(endAnchor.getTime() + (MAX_DAYS + 1) * 86400000);
         end_dt.setHours(11, 59, 59, 999);
         endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
       }
