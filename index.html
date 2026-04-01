@@ -527,12 +527,12 @@ function parseCsv(csvText) {
           }
         });
       }
-      const ref = (end_dt && end_dt < now) ? end_dt : now;
-      const elapsed_days = start_dt ? calcElapsedDays(start_dt, ref) : 0;
+      const is_ended = end_dt && end_dt < now;
+      const ref = is_ended ? end_dt : now;
+      // 만료된 환자는 정확히 MAX_DAYS (end_dt 11:59:59 vs anchor 12:00:00 반올림 오차 방지)
+      const elapsed_days = start_dt ? (is_ended ? MAX_DAYS : calcElapsedDays(start_dt, ref)) : 0;
       const used_days = Math.min(Object.keys(userSessions).length, elapsed_days);
       const compVal = calcCompliance(used_days, elapsed_days);
-
-      const is_ended = end_dt && end_dt < now;
 
       // 옐로카드: 체크포인트별 목표 미달 누적 (해당 시점까지의 누적 사용일 기준)
       const sessionDayNums = Object.keys(userSessions).map(Number);
