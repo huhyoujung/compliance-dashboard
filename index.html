@@ -398,10 +398,9 @@ function calcElapsedDays(startDt, referenceDt) {
   const anchor = new Date(startDt);
   anchor.setHours(12, 0, 0, 0);
   const deltaMs = referenceDt - anchor;
-  if (deltaMs < 0) return 0;
-  // 가입 당일(정오~익일 정오) = 0일차 → 순응 미표시
-  // 익일 정오 이후 = 1일차부터 카운트
-  return Math.min(Math.floor(deltaMs / 86400000), MAX_DAYS);
+  // 가입일 = Day 1 (정오 전이어도 Day 1)
+  if (deltaMs < 0) return 1;
+  return Math.min(Math.floor(deltaMs / 86400000) + 1, MAX_DAYS);
 }
 
 function calcCompliance(usedDays, elapsedDays) {
@@ -501,14 +500,14 @@ function parseCsv(csvText) {
       const startRaw = (r[idx("시작일자")] || "").trim();
       const start_dt = startRaw ? new Date(startRaw) : null;
 
-      // 만료: anchor(시작일 정오) + (MAX_DAYS+1)일 정오 직전 (익일 정오 경계 정책)
-      // 예) 3/4 10:41 시작 → anchor 3/4 12:00 → 28일차 마지막 = 4/2 11:59:59
+      // 만료: anchor(시작일 정오) + MAX_DAYS일 정오 직전 (시작일=Day1, 익일 정오 경계)
+      // 예) 3/4 시작 → anchor 3/4 12:00 → Day28=3/31 → 만료=4/1 11:59:59
       let end_dt = null;
       let endRaw = "";
       if (start_dt) {
         const endAnchor = new Date(start_dt);
         endAnchor.setHours(12, 0, 0, 0);
-        end_dt = new Date(endAnchor.getTime() + (MAX_DAYS + 1) * 86400000);
+        end_dt = new Date(endAnchor.getTime() + MAX_DAYS * 86400000);
         end_dt.setHours(11, 59, 59, 999);
         endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
       }
