@@ -40,6 +40,9 @@
     .filter-chip input[type="checkbox"] { display: none; }
     .filter-chip.active { background: #171717; color: #fff; border-color: #171717; font-weight: 600; }
 
+    /* 필터 활성 강조 */
+    select.filter-active { background: #171717 !important; color: #fff !important; border-color: #171717 !important; font-weight: 600; }
+
     /* 탭 버튼 활성 */
     .tab-btn.active { color: #171717; background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 
@@ -265,6 +268,9 @@
         <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="hospital-chart" class="rounded-lg overflow-hidden"></div></div>
         <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="weekly-trend-chart" class="rounded-lg overflow-hidden"></div></div>
       </div>
+      <div class="mt-4">
+        <div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4"><div id="weekly-missed-chart" class="rounded-lg overflow-hidden"></div></div>
+      </div>
     </div>
 
     <div id="tab-print" style="display:none">
@@ -275,9 +281,9 @@
         </div>
         <div class="flex items-center gap-2 no-print">
           <select id="print-status-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
-            <option value="active" selected>사용중</option>
+            <option value="all" selected>전체</option>
+            <option value="active">사용중</option>
             <option value="ended">만료됨</option>
-            <option value="all">전체</option>
           </select>
           <select id="print-hospital-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
             <option value="all">전체 기관</option>
@@ -627,6 +633,10 @@ function applyFilters() {
   const statusVal = document.getElementById("status-filter").value;
   const yellowOnly = document.getElementById("yellow-card-only").checked;
 
+  // 필터 활성 강조
+  document.getElementById("hospital-filter").classList.toggle("filter-active", hospitalVal !== "all");
+  document.getElementById("status-filter").classList.toggle("filter-active", statusVal !== "all");
+
   tableStatusTab = statusVal;
   tableHospitalTab = hospitalVal;
 
@@ -649,7 +659,8 @@ function renderCards() {
   const base = filteredRows;
   const total = base.length;
   const noUse = base.filter(r => r.used_days === 0 && r.elapsed_days > 1).length;
-  const yellowCount = base.filter(r => r.yellow_cards > 0 && !r.is_ended).length;
+  const statusVal = document.getElementById("status-filter").value;
+  const yellowCount = base.filter(r => r.yellow_cards > 0 && (statusVal !== "active" || !r.is_ended)).length;
   const validRows = base.filter(r => r.elapsed_days > 0 && r.compliance !== null);
   const avg = validRows.length
     ? validRows.reduce((s, r) => s + r.compliance, 0) / validRows.length
@@ -901,6 +912,10 @@ function renderHeatmap() {
       gridcolor: "#f5f5f5",
       linecolor: "#e5e5e5",
     },
+    shapes: [6.5, 13.5, 20.5, 23.5].map(x => ({
+      type: "line", x0: x, x1: x, y0: -0.5, y1: rows.length - 0.5,
+      line: { color: "#171717", width: 3.5 }, layer: "above",
+    })),
     plot_bgcolor: "#fafafa",
     paper_bgcolor: "white",
     hoverlabel: {
@@ -927,6 +942,7 @@ function renderHospitalChart() {
     document.getElementById("hospital-kpi-wrap").innerHTML = "";
     Plotly.purge("hospital-chart");
     Plotly.purge("weekly-trend-chart");
+    Plotly.purge("weekly-missed-chart");
     return;
   }
 
@@ -1141,6 +1157,47 @@ function renderHospitalChart() {
     hoverlabel: { bgcolor: "#171717", bordercolor: "#171717", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" } },
   }, { responsive: true });
 
+  // ── 주차별 미사용 일수 추이 (라인 차트) ──
+  const missedTraces = stats.map((s, idx) => {
+    const weekMissed = [0, 1, 2, 3].map(w => {
+      const rows = hospRows.filter(r => r.hospital === s.hospital && r.weekly_scores && r.weekly_scores[w] && r.weekly_scores[w].completed);
+      if (!rows.length) return null;
+      const missedVals = rows.map(r => 7 - r.weekly_scores[w].used);
+      return missedVals.reduce((a, b) => a + b, 0) / missedVals.length;
+    });
+    return {
+      type: "scatter", mode: "lines+markers",
+      x: weekLabels, y: weekMissed,
+      name: s.hospital.replace(/대학교/g, "대"),
+      line: { color: lineColors[idx % lineColors.length], width: 2 },
+      marker: { size: 7 },
+      connectgaps: false,
+      hovertemplate: "<b>%{fullData.name}</b><br>%{x}: %{y:.1f}일 미사용<extra></extra>",
+    };
+  });
+
+  Plotly.newPlot("weekly-missed-chart", missedTraces, {
+    title: { text: "주차별 평균 미사용 일수 추이", font: { family: "Inter, system-ui, sans-serif", size: 14, color: "#171717" }, x: 0.01, xanchor: "left" },
+    yaxis: {
+      title: { text: "미사용 일수", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#a3a3a3" } },
+      range: [0, 7.5], gridcolor: "#f5f5f5", linecolor: "#e5e5e5", dtick: 1,
+      tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#a3a3a3" }, zeroline: false,
+    },
+    xaxis: { tickfont: { family: "Inter, system-ui, sans-serif", size: 11, color: "#525252" }, linecolor: "#e5e5e5" },
+    legend: { font: { family: "Inter, system-ui, sans-serif", size: 10 }, orientation: "h", y: -0.25, x: 0.5, xanchor: "center" },
+    margin: { l: 50, r: 15, t: 50, b: 70 },
+    height: 350,
+    paper_bgcolor: "white", plot_bgcolor: "#fafafa",
+    hoverlabel: { bgcolor: "#171717", bordercolor: "#171717", font: { family: "Inter, system-ui, sans-serif", size: 12, color: "#fff" } },
+    shapes: [{
+      type: "line", x0: weekLabels[0], x1: weekLabels[3],
+      y0: 4, y1: 4, line: { color: "#fca5a5", width: 1.5, dash: "dot" },
+    }],
+    annotations: [{
+      x: weekLabels[3], y: 4, text: "주의 기준(4일)", showarrow: false,
+      font: { size: 10, color: "#f87171" }, xanchor: "left", xshift: 5,
+    }],
+  }, { responsive: true });
 
 }
 
@@ -1191,7 +1248,7 @@ function renderPrintReport() {
   html += `<table class="print-table"><thead><tr>`;
   html += `<th>피험자번호</th><th>처방 시작일</th>`;
   for (let w = 0; w < 4; w++) {
-    for (let d = 0; d < 7; d++) html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${d===0&&w>0?'border-left:2px solid #a3a3a3;':''}">${w*7+d+1}</th>`;
+    for (let d = 0; d < 7; d++) { const di = w*7+d; html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${(d===0&&w>0)||di===24?'border-left:3px solid #737373;':''}">${di+1}</th>`; }
   }
   html += `<th>처방 종료일</th><th>경과일</th><th>사용일</th><th>사용률(%)</th><th>미달</th>`;
   html += `</tr></thead><tbody>`;
@@ -1226,7 +1283,7 @@ function renderPrintReport() {
         if (dayIdx >= r.elapsed_days || isPrintToday) { cls = daySessions.length > 0 ? 'used' : 'future'; }
         else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
-        const weekBorder = d === 0 && w > 0 ? 'border-left:2px solid #d4d4d4;' : '';
+        const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? 'border-left:3px solid #737373;' : '';
         html += `<td class="hm ${cls}" style="${weekBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
