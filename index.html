@@ -88,6 +88,7 @@
     #mini-heatmap .mh-legend .lg-used::before { background: #2dd4bf; }
     #mini-heatmap .mh-legend .lg-unused::before { background: #fca5a5; }
     #mini-heatmap .mh-legend .lg-future::before { background: #f5f5f5; border: 1px solid #e5e5e5; }
+    #mini-heatmap .mh-legend .lg-dropout::before { background: #d4d4d4; }
 
     /* 스피너 */
     #spinner { display: none; position: fixed; inset: 0; background: rgba(248,250,252,.85); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 999; }
@@ -115,6 +116,22 @@
     #tab-print .yc-fail { color: #171717; font-weight: 700; }
     #tab-print .yc-pass { color: #a3a3a3; }
 
+    /* Drop-out 행 스타일 */
+    tr.dropout-row { opacity: 0.45; }
+    tr.dropout-row td { color: #a3a3a3 !important; text-decoration: line-through; }
+    tr.dropout-row td:last-child, tr.dropout-row td:first-child { text-decoration: none; }
+    .dropout-badge { display: inline-block; font-size: 10px; background: #737373; color: #fff; padding: 1px 8px; border-radius: 999px; font-weight: 600; margin-left: 6px; text-decoration: none; }
+    .dropout-toggle { cursor: pointer; font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid #e5e5e5; background: #fff; color: #a3a3a3; transition: all .15s; }
+    .dropout-toggle:hover { border-color: #737373; color: #525252; background: #f5f5f5; }
+    .dropout-toggle.active { background: #737373; color: #fff; border-color: #737373; }
+    #tab-print .print-table tr.print-dropout td { color: #a3a3a3 !important; }
+    /* Drop-out 이후: 진한 회색 */
+    #tab-print .print-table td.hm.do-after { background: #d4d4d4 !important; border-color: #d4d4d4 !important; color: #d4d4d4 !important; }
+    /* Drop-out 이전 사용: 흐린 검정 */
+    #tab-print .print-table td.hm.do-used { background: #a3a3a3 !important; color: #a3a3a3 !important; }
+    /* Drop-out 이전 미사용: 흐린 X (회색 테두리 + 회색 X) */
+    #tab-print .print-table td.hm.do-unused { background: #fff !important; border: 1px solid #d4d4d4 !important; }
+
     @media print {
       body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       #login-screen, header, #filter-bar, #summary-cards, #main-tabs, #mini-heatmap, #spinner,
@@ -126,6 +143,9 @@
       #tab-print .print-table td.hm.used { background: #000 !important; color: #000 !important; }
       #tab-print .print-table td.hm.unused { background: #fff !important; color: #000 !important; border: 1px solid #999 !important; }
       #tab-print .print-table td.hm.future { background: #ccc !important; color: #ccc !important; border: 1px solid #aaa !important; }
+      #tab-print .print-table td.hm.do-after { background: #bbb !important; color: #bbb !important; border: 1px solid #999 !important; }
+      #tab-print .print-table td.hm.do-used { background: #999 !important; color: #999 !important; }
+      #tab-print .print-table td.hm.do-unused { background: #fff !important; border: 1px solid #bbb !important; }
       @page { size: A4 landscape; margin: 12mm 10mm; }
     }
   </style>
@@ -177,14 +197,12 @@
       <span class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mr-1">상태</span>
       <select id="status-filter" onchange="applyFilters()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
         <option value="all">전체</option>
+        <option value="all-no-do">전체 (D/O 제외)</option>
         <option value="active">사용중</option>
         <option value="ended">만료됨</option>
+        <option value="dropout">Drop-out</option>
+        <option value="yellow">옐로카드</option>
       </select>
-      <div class="w-px h-6 bg-neutral-200 mx-1"></div>
-      <label class="filter-chip inline-flex items-center gap-1.5 px-3.5 py-1 border border-neutral-200 rounded-full bg-white text-xs cursor-pointer text-neutral-500 font-medium select-none hover:bg-neutral-50 hover:border-neutral-300 hover:text-neutral-900 transition-all" id="chip-yellow">
-        <input type="checkbox" id="yellow-card-only" onchange="toggleChip('chip-yellow'); applyFilters()">
-        옐로카드만
-      </label>
       <span class="hint-wrap relative inline-flex items-center">
         <span class="hint-icon inline-flex items-center justify-center w-4 h-4 rounded-full border border-neutral-200 text-[10px] font-bold text-neutral-400 cursor-help ml-1 shrink-0 hover:bg-neutral-900 hover:text-white hover:border-neutral-900 transition-all">?</span>
         <span class="hint-bubble absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-xs font-normal px-3 py-2 rounded-lg whitespace-nowrap z-[100] shadow-lg leading-relaxed">체크포인트 목표 미달 (7일→3회, 14일→6회, 21일→9회, 24일→10회)</span>
@@ -254,6 +272,7 @@
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#2dd4bf;box-shadow:0 1px 3px rgba(45,212,191,.3)"></div><span class="font-medium">사용</span></div>
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#fca5a5;box-shadow:0 1px 3px rgba(252,165,165,.3)"></div><span class="font-medium">미사용</span></div>
             <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#f5f5f5;border:1px solid #e5e5e5"></div><span class="font-medium">미경과</span></div>
+            <div class="flex items-center gap-2"><div class="w-3.5 h-3.5 rounded" style="background:#d4d4d4"></div><span class="font-medium">Drop-out</span></div>
           </div>
         </div>
         <div class="text-[11px] text-neutral-400 mt-1">※ 처방 시작일 기준 일차 표기 · KST(UTC+9) · 익일 11:59까지 전일 일차로 산정 · 데이터 기준: 매일 12:00 갱신</div>
@@ -282,8 +301,10 @@
         <div class="flex items-center gap-2 no-print">
           <select id="print-status-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
             <option value="all" selected>전체</option>
+            <option value="all-no-do">전체 (D/O 제외)</option>
             <option value="active">사용중</option>
             <option value="ended">만료됨</option>
+            <option value="dropout">Drop-out</option>
           </select>
           <select id="print-hospital-filter" onchange="renderPrintReport()" class="border border-neutral-200 rounded-md px-2.5 py-1.5 text-[13px] bg-white text-neutral-900 cursor-pointer focus:border-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900/5">
             <option value="all">전체 기관</option>
@@ -310,6 +331,10 @@
         <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#171717;border-radius:2px"></div> 사용</div>
         <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#fff;border:1px solid #a3a3a3;border-radius:2px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 16 16" style="width:14px;height:14px;"><line x1="1" y1="1" x2="15" y2="15" stroke="#171717" stroke-width="2"/><line x1="15" y1="1" x2="1" y2="15" stroke="#171717" stroke-width="2"/></svg></div> 미사용</div>
         <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#e5e5e5;border-radius:2px"></div> 미경과</div>
+        <div class="w-px h-4 bg-neutral-200"></div>
+        <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#a3a3a3;border-radius:2px"></div> D/O 사용</div>
+        <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#fff;border:1px solid #d4d4d4;border-radius:2px;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 16 16" style="width:14px;height:14px;"><line x1="1" y1="1" x2="15" y2="15" stroke="#a3a3a3" stroke-width="2"/><line x1="15" y1="1" x2="1" y2="15" stroke="#a3a3a3" stroke-width="2"/></svg></div> D/O 미사용</div>
+        <div class="flex items-center gap-1.5"><div style="width:16px;height:16px;background:#d4d4d4;border-radius:2px"></div> D/O 이후</div>
         <div class="w-px h-4 bg-neutral-200"></div>
         <div><strong class="text-neutral-500">체크포인트 미달</strong>: 7·14·21·24일차 체크포인트에서 목표 사용일 미달 시 1건. 예) <span style="font-weight:700">7일:2/3</span> = 7일차까지 3회 목표 중 2회 사용 → <strong>미달(볼드)</strong></div>
       </div>
@@ -391,6 +416,20 @@ let sessionMap = {};      // { user_id: { dayN: [sessionId, ...], ... } }
 
 let tableStatusTab = "all"; // "all" | "active" | "ended"
 let tableHospitalTab = "all"; // "all" | hospital name
+
+// ── Drop-out 관리 (하드코딩) ──────────────────────────────────────────
+// subject_id → Drop-out 날짜 (해당 날짜 오전 11:59까지 사용일차로 산정)
+const DROPOUT_MAP = {
+  "h01-R1006": "2026-04-20",  // 4/20 오전 11:59까지
+};
+
+function getDropoutDate(subjectId) {
+  const dateStr = DROPOUT_MAP[subjectId];
+  if (!dateStr) return null;
+  // 해당 날짜 11:59:59 = 그 날짜 정오 직전까지가 마지막 일차
+  const dt = new Date(dateStr + "T11:59:59");
+  return isNaN(dt) ? null : dt;
+}
 
 // 5분 캐시
 let cachedCsv = null;
@@ -540,24 +579,39 @@ function parseCsv(csvText) {
           }
         });
       }
+      // Drop-out 확인
+      const dropout_dt = getDropoutDate(subject_id);
+      const is_dropout = !!dropout_dt;
+
       const is_ended = end_dt && end_dt < now;
-      const ref = is_ended ? end_dt : now;
-      // elapsed_days: 오늘 포함 (히트맵 렌더링용, 1-based)
-      const elapsed_days = start_dt ? (is_ended ? MAX_DAYS : calcElapsedDays(start_dt, ref)) : 0;
-      // completedDays: 완료된 일수만 (순응도 계산용, 오늘 제외)
-      const completedDays = is_ended ? MAX_DAYS : Math.max(elapsed_days - 1, 0);
-      const used_days = Math.min(Object.keys(userSessions).length, completedDays);
+      // Drop-out: dropout_dt 기준, 종료: end_dt 기준, 진행중: now 기준
+      const ref = is_dropout ? dropout_dt : (is_ended ? end_dt : now);
+      // elapsed_days: 히트맵 렌더링용 (1-based)
+      let elapsed_days;
+      if (is_dropout) {
+        elapsed_days = start_dt ? Math.min(calcElapsedDays(start_dt, dropout_dt), MAX_DAYS) : 0;
+      } else {
+        elapsed_days = start_dt ? (is_ended ? MAX_DAYS : calcElapsedDays(start_dt, ref)) : 0;
+      }
+      // completedDays: 순응도 계산용
+      const completedDays = (is_ended || is_dropout) ? elapsed_days : Math.max(elapsed_days - 1, 0);
+      // Drop-out 이후 세션 제외
+      const filteredSessions = {};
+      Object.entries(userSessions).forEach(([d, entries]) => {
+        if (Number(d) < elapsed_days) filteredSessions[d] = entries;
+      });
+      const used_days = Math.min(Object.keys(filteredSessions).length, completedDays);
       const compVal = calcCompliance(used_days, completedDays);
 
-      // 옐로카드: 체크포인트별 목표 미달 누적 (완료된 일수 기준, 오늘 제외)
-      const sessionDayNums = Object.keys(userSessions).map(Number);
-      const yellow_cards = YELLOW_CARD_RULES.reduce((cnt, rule) => {
-        if (completedDays < rule.day) return cnt;  // 아직 미도달
+      // 옐로카드: 체크포인트별 목표 미달 누적 (완료된 일수 기준)
+      const sessionDayNums = Object.keys(filteredSessions).map(Number);
+      const yellow_cards = is_dropout ? 0 : YELLOW_CARD_RULES.reduce((cnt, rule) => {
+        if (completedDays < rule.day) return cnt;
         const usedAtCheckpoint = sessionDayNums.filter(d => d < rule.day).length;
         return usedAtCheckpoint < rule.target ? cnt + 1 : cnt;
       }, 0);
 
-      const weeklyResult = calcWeeklyCompliance(userSessions, completedDays);
+      const weeklyResult = calcWeeklyCompliance(filteredSessions, completedDays);
 
       return {
         subject_id,
@@ -574,7 +628,9 @@ function parseCsv(csvText) {
         weekly_scores: weeklyResult.scores, // [{week, score, used}, ...]
         yellow_cards,
         is_ended: !!is_ended,
-        sessions: userSessions, // { dayN: [sessionId, ...] }
+        is_dropout,
+        dropout_dt,
+        sessions: is_dropout ? filteredSessions : userSessions, // { dayN: [sessionId, ...] }
       };
     });
 }
@@ -631,7 +687,6 @@ function toggleChip(chipId) {
 function applyFilters() {
   const hospitalVal = document.getElementById("hospital-filter").value;
   const statusVal = document.getElementById("status-filter").value;
-  const yellowOnly = document.getElementById("yellow-card-only").checked;
 
   // 필터 활성 강조
   document.getElementById("hospital-filter").classList.toggle("filter-active", hospitalVal !== "all");
@@ -642,9 +697,11 @@ function applyFilters() {
 
   filteredRows = allRows.filter(r => {
     if (hospitalVal !== "all" && r.hospital !== hospitalVal) return false;
-    if (statusVal === "active" && r.is_ended) return false;
+    if (statusVal === "all-no-do" && r.is_dropout) return false;
+    if (statusVal === "active" && (r.is_ended || r.is_dropout)) return false;
     if (statusVal === "ended" && !r.is_ended) return false;
-    if (yellowOnly && r.yellow_cards === 0) return false;
+    if (statusVal === "dropout" && !r.is_dropout) return false;
+    if (statusVal === "yellow" && r.yellow_cards === 0) return false;
     return true;
   });
 
@@ -657,13 +714,16 @@ function applyFilters() {
 // ── 요약 카드 ────────────────────────────────────────────────────────────
 function renderCards() {
   const base = filteredRows;
+  const activeBase = base.filter(r => !r.is_dropout);
   const total = base.length;
-  const noUse = base.filter(r => r.used_days === 0 && r.elapsed_days > 1).length;
+  const dropoutCount = base.filter(r => r.is_dropout).length;
+  const noUse = activeBase.filter(r => r.used_days === 0 && r.elapsed_days > 1).length;
   const statusVal = document.getElementById("status-filter").value;
-  const yellowCount = base.filter(r => r.yellow_cards > 0 && (statusVal !== "active" || !r.is_ended)).length;
-  const validRows = base.filter(r => r.elapsed_days > 0 && r.compliance !== null);
-  const avg = validRows.length
-    ? validRows.reduce((s, r) => s + r.compliance, 0) / validRows.length
+  const yellowCount = activeBase.filter(r => r.yellow_cards > 0 && (statusVal !== "active" || !r.is_ended)).length;
+  // 평균 사용률: Drop-out 포함 (참여 기간 기준 사용률)
+  const validRowsForAvg = base.filter(r => r.elapsed_days > 0 && r.compliance !== null);
+  const avg = validRowsForAvg.length
+    ? validRowsForAvg.reduce((s, r) => s + r.compliance, 0) / validRowsForAvg.length
     : null;
   document.getElementById("card-total").textContent = total + "명";
   document.getElementById("card-nouse").textContent = noUse + "명";
@@ -706,15 +766,22 @@ function renderTable() {
   const tbody = document.getElementById("table-body");
   tbody.innerHTML = rows.map(r => {
     const comp = r.compliance !== null ? r.compliance.toFixed(1) + "%" : "N/A";
-    const endedBadge = r.is_ended ? '<span class="text-[10px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-500 ml-1.5 font-medium">종료</span>' : "";
-    const bg = rowBgColor(r.yellow_cards);
-    const ycDisplay = r.yellow_cards > 0
-      ? `<span style="color:#f472b6;font-weight:700">${r.yellow_cards}</span>`
-      : `<span style="color:#a3a3a3">0</span>`;
-    return `<tr style="${bg}" data-uid="${r.user_id}">
-      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.subject_id}</td>
+    const statusBadge = r.is_dropout
+      ? '<span class="dropout-badge">Drop-out</span>'
+      : r.is_ended
+        ? '<span class="text-[10px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-500 ml-1.5 font-medium">종료</span>'
+        : '';
+    const bg = r.is_dropout ? "" : rowBgColor(r.yellow_cards);
+    const rowClass = r.is_dropout ? "dropout-row" : "";
+    const ycDisplay = r.is_dropout
+      ? `<span style="color:#a3a3a3">-</span>`
+      : r.yellow_cards > 0
+        ? `<span style="color:#f472b6;font-weight:700">${r.yellow_cards}</span>`
+        : `<span style="color:#a3a3a3">0</span>`;
+    return `<tr style="${bg}" class="${rowClass}" data-uid="${r.user_id}">
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.subject_id}${statusBadge}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.hospital}</td>
-      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.start_str}${endedBadge}</td>
+      <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.start_str}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.end_str}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.elapsed_days}</td>
       <td class="px-3.5 py-2.5 border-b border-neutral-100 whitespace-nowrap">${r.used_days}</td>
@@ -744,9 +811,8 @@ function buildMiniHeatmapHTML(r) {
   for (let d = 0; d < MAX_DAYS; d++) {
     const daySessions = sess[d] || [];
     const label = d + 1;
-    const isTodayCell = label === todayLabel && !r.is_ended;
+    const isTodayCell = label === todayLabel && !r.is_ended && !r.is_dropout;
     if (d >= r.elapsed_days || isTodayCell) {
-      // 오늘 셀은 아직 하루가 안 끝났으므로 미경과(회색)로 표시
       if (isTodayCell && daySessions.length > 0) {
         const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
         cells += `<div class="mh-cell used today" title="${times}">${label}</div>`;
@@ -773,10 +839,11 @@ function buildMiniHeatmapHTML(r) {
       }
     }
   }
-  const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span></div>`;
-  // 옐로카드 표시
-  const ycInfo = r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#f472b6;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
-  return header + meta + `<div class="mh-grid">${cells}</div>` + legend + ycInfo;
+  const legend = `<div class="mh-legend"><span class="lg-used">사용</span><span class="lg-unused">미사용</span><span class="lg-future">미경과</span>${r.is_dropout ? '<span class="lg-dropout">Drop-out</span>' : ''}</div>`;
+  // Drop-out/옐로카드 표시
+  const dropoutInfo = r.is_dropout ? `<div style="margin-top:10px;font-size:12px;color:#737373;font-weight:600">⛔ Drop-out</div>` : '';
+  const ycInfo = !r.is_dropout && r.yellow_cards > 0 ? `<div style="margin-top:10px;font-size:12px;color:#f472b6;font-weight:600">🟡 옐로카드 ${r.yellow_cards}건</div>` : '';
+  return header + meta + `<div class="mh-grid">${cells}</div>` + legend + dropoutInfo + ycInfo;
 }
 
 let hoverAttached = false;
@@ -852,9 +919,27 @@ function renderHeatmap() {
       const startInfo = r.start_str ? `🗓️ 가입: ${r.start_str}` : '';
       const isToday = dayDt && now.getFullYear() === dayDt.getFullYear() && now.getMonth() === dayDt.getMonth() && now.getDate() === dayDt.getDate();
       const todayTag = (d === 0 && isToday) ? '<br>🆕 오늘 가입' : '';
-      if (d >= r.elapsed_days) {
+
+      // Drop-out 이후 기간은 진한 회색(3)
+      if (r.is_dropout && d >= r.elapsed_days) {
+        rowVals.push(3);
+        rowHover.push(`📋 ${r.subject_id} [Drop-out]<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차<br>⛔ Drop-out`);
+      } else if (d >= r.elapsed_days) {
         rowVals.push(2);
         rowHover.push(`📋 ${r.subject_id}<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})${todayTag}<br>⬜ 미경과`);
+      } else if (r.is_dropout && hasSession) {
+        // Drop-out 사전 사용: 흐린 초록(4)
+        rowVals.push(4);
+        const sidLines = daySessions.map(e => {
+          const masked = e.sid.length > 5 ? "*****" + e.sid.slice(5) : "*****";
+          const dateTag = e.kstDate ? e.kstDate.slice(5).replace('-', '/') : '';
+          return `🔑 ${masked} (${dateTag} ${e.kstTime || ''} KST)`;
+        }).join("<br>");
+        rowHover.push(`📋 ${r.subject_id} [Drop-out]<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>✅ 사용<br>${sidLines}`);
+      } else if (r.is_dropout && !hasSession) {
+        // Drop-out 사전 미사용: 흐린 분홍(5)
+        rowVals.push(5);
+        rowHover.push(`📋 ${r.subject_id} [Drop-out]<br>${startInfo ? startInfo + '<br>' : ''}📅 ${label}일차 (${dayRange})<br>❌ 미사용`);
       } else if (hasSession) {
         rowVals.push(1);
         const sidLines = daySessions.map(e => {
@@ -878,9 +963,12 @@ function renderHeatmap() {
   const xLabels = Array.from({length: MAX_DAYS}, (_, i) => `${i+1}일`);
 
   const colorscale = [
-    [0.00, "#fca5a5"], [0.33, "#fca5a5"],
-    [0.34, "#2dd4bf"], [0.66, "#2dd4bf"],
-    [0.67, "#f5f5f5"], [1.00, "#f5f5f5"],
+    [0/5, "#fca5a5"], [0.99/5, "#fca5a5"],   // 0 = 미사용
+    [1/5, "#2dd4bf"], [1.99/5, "#2dd4bf"],   // 1 = 사용
+    [2/5, "#f5f5f5"], [2.99/5, "#f5f5f5"],   // 2 = 미경과
+    [3/5, "#d4d4d4"], [3.99/5, "#d4d4d4"],   // 3 = Drop-out 이후(진한 회색)
+    [4/5, "#bdd4cd"], [4.99/5, "#bdd4cd"],   // 4 = Drop-out 사전 사용(흐린 초록)
+    [5/5, "#dcc4c4"],                         // 5 = Drop-out 사전 미사용(흐린 분홍)
   ];
 
   const height = Math.max(300, rows.length * 38 + 120);
@@ -891,7 +979,7 @@ function renderHeatmap() {
     x: xLabels,
     y: yLabels,
     colorscale,
-    zmin: 0, zmax: 2,
+    zmin: 0, zmax: 5,
     showscale: false,
     text: hoverTexts,
     hovertemplate: "%{text}<extra></extra>",
@@ -928,12 +1016,12 @@ function renderHeatmap() {
 
 // ── 기관별 차트 + 인사이트 ────────────────────────────────────────────────
 function renderHospitalChart() {
-  // 기관별 요약은 항상 전체 데이터 사용 (기관 필터 무시)
+  // 기관별 요약은 항상 전체 데이터 사용 (기관 필터 무시, dropout도 사용률에 포함)
   const hospRows = allRows.filter(r => {
     const statusVal = document.getElementById("status-filter").value;
     if (statusVal === "active" && r.is_ended) return false;
     if (statusVal === "ended" && !r.is_ended) return false;
-    if (document.getElementById("yellow-card-only") && document.getElementById("yellow-card-only").checked && r.yellow_cards === 0) return false;
+    if (statusVal === "yellow" && r.yellow_cards === 0) return false;
     return true;
   });
   const validRows = hospRows.filter(r => r.compliance !== null);
@@ -958,8 +1046,8 @@ function renderHospitalChart() {
     const s = hospitalStats[r.hospital];
     s.total++;
     if (r.is_ended) s.ended++; else s.active++;
-    if (r.used_days === 0 && r.elapsed_days > 1) s.noUse++;
-    if (r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
+    if (!r.is_dropout && r.used_days === 0 && r.elapsed_days > 1) s.noUse++;
+    if (!r.is_dropout && r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
     if (r.compliance !== null) s.compValues.push(r.compliance);
     s.usedDays.push(r.used_days);
   });
@@ -1213,8 +1301,10 @@ function renderPrintReport() {
   const printStatusVal = document.getElementById('print-status-filter').value;
   let rows = allRows.filter(r => {
     if (hospitalVal !== 'all' && r.hospital !== hospitalVal) return false;
-    if (printStatusVal === 'active' && r.is_ended) return false;
+    if (printStatusVal === 'all-no-do' && r.is_dropout) return false;
+    if (printStatusVal === 'active' && (r.is_ended || r.is_dropout)) return false;
     if (printStatusVal === 'ended' && !r.is_ended) return false;
+    if (printStatusVal === 'dropout' && !r.is_dropout) return false;
     return true;
   });
   const sortVal = document.getElementById('print-sort-filter').value;
@@ -1271,19 +1361,33 @@ function renderPrintReport() {
     const ycHtml = yc > 0
       ? `<span style="font-weight:700;cursor:help" title="${ycTip}">${yc}</span>`
       : (ycParts.length > 0 ? `<span class="yc-pass" style="cursor:help" title="${ycTip}">0</span>` : `<span class="yc-pass">0</span>`);
-    html += `<tr>`;
-    html += `<td style="font-weight:600;">${r.subject_id}</td>`;
+    const printRowClass = r.is_dropout ? 'print-dropout' : '';
+    const dropoutLabel = r.is_dropout ? ' <span style="font-size:9px;background:#a3a3a3;color:#fff;padding:1px 5px;border-radius:3px;">Drop-out</span>' : '';
+    html += `<tr class="${printRowClass}">`;
+    html += `<td style="font-weight:600;">${r.subject_id}${dropoutLabel}</td>`;
     html += `<td class="num">${r.start_str || '-'}</td>`;
     for (let w = 0; w < 4; w++) {
       for (let d = 0; d < 7; d++) {
         const dayIdx = w * 7 + d;
         const daySessions = sess[dayIdx] || [];
         let cls, content = '';
-        const isPrintToday = (dayIdx + 1) === calcElapsedDays(r.start_dt, new Date()) && !r.is_ended;
-        if (dayIdx >= r.elapsed_days || isPrintToday) { cls = daySessions.length > 0 ? 'used' : 'future'; }
-        else if (daySessions.length > 0) { cls = 'used'; }
+        const isPrintToday = (dayIdx + 1) === calcElapsedDays(r.start_dt, new Date()) && !r.is_ended && !r.is_dropout;
+        if (r.is_dropout && dayIdx >= r.elapsed_days) {
+          // Drop-out 이후: 진한 회색
+          cls = 'future do-after';
+        } else if (dayIdx >= r.elapsed_days || isPrintToday) {
+          cls = daySessions.length > 0 ? 'used' : 'future';
+        } else if (r.is_dropout && daySessions.length > 0) {
+          // Drop-out 이전 사용: 흐린 사용
+          cls = 'used do-used';
+        } else if (r.is_dropout) {
+          // Drop-out 이전 미사용: 흐린 X
+          cls = 'unused do-unused';
+          content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#a3a3a3" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#a3a3a3" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+        } else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
-        const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? 'border-left:3px solid #737373;' : '';
+        const weekBorderColor = (r.is_dropout && dayIdx >= r.elapsed_days) ? '#d4d4d4' : '#737373';
+        const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? `border-left:3px solid ${weekBorderColor};` : '';
         html += `<td class="hm ${cls}" style="${weekBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
@@ -1291,7 +1395,7 @@ function renderPrintReport() {
     html += `<td class="num">${r.elapsed_days}</td>`;
     html += `<td class="num">${r.used_days}</td>`;
     html += `<td class="num" style="font-weight:600;">${comp}</td>`;
-    html += `<td class="num">${ycHtml}</td>`;
+    html += `<td class="num">${r.is_dropout ? '<span style="color:#a3a3a3">-</span>' : ycHtml}</td>`;
     html += `</tr>`;
   });
 
