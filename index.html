@@ -1047,7 +1047,7 @@ function renderHospitalChart() {
     s.total++;
     if (r.is_ended) s.ended++; else s.active++;
     if (!r.is_dropout && r.used_days === 0 && r.elapsed_days > 1) s.noUse++;
-    if (!r.is_dropout && r.yellow_cards > 0 && !r.is_ended) s.yellowCards++;
+    if (!r.is_dropout && r.yellow_cards > 0) s.yellowCards++;
     if (r.compliance !== null) s.compValues.push(r.compliance);
     s.usedDays.push(r.used_days);
   });
