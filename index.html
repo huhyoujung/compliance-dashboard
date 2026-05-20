@@ -1348,8 +1348,9 @@ function renderPrintReport() {
     const comp = r.compliance !== null ? r.compliance.toFixed(1) + '%' : 'N/A';
     const yc = r.yellow_cards || 0;
     /* 체크포인트별 미달 상세 */
+    const printCheckpoints = [...WEEKLY_CHECKPOINTS, {day:24, target:YELLOW_CARD_DAY24_TARGET}].sort((a,b)=>a.day-b.day);
     let ycParts = [];
-    YELLOW_CARD_RULES.forEach(rule => {
+    printCheckpoints.forEach(rule => {
       if (rule.day <= r.elapsed_days) {
         let cnt = 0;
         for (let i = 0; i < rule.day; i++) { if ((sess[i] || []).length > 0) cnt++; }
