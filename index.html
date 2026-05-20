@@ -1411,8 +1411,7 @@ function renderPrintReport() {
           content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#a3a3a3" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#a3a3a3" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
         } else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
-        const weekBorderColor = (r.is_dropout && dayIdx >= r.elapsed_days) ? '#d4d4d4' : '#737373';
-        const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? `border-left:3px solid ${weekBorderColor};` : '';
+        const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? `border-left:3px solid #737373;` : '';
         html += `<td class="hm ${cls}" style="${weekBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
