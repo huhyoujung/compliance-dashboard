@@ -1429,15 +1429,47 @@ function renderPrintReport() {
   document.getElementById('print-report-content').innerHTML = html;
 }
 
-function exportPrintPDF() {
-  const origTitle = document.title;
-  const now = new Date();
-  const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-  const hospVal = document.getElementById('print-hospital-filter').value;
-  const hospName = hospVal === 'all' ? '전체기관' : hospVal;
-  document.title = `BELL-001-S-KR-003_사용현황_${hospName}_${ts}`;
-  window.print();
-  document.title = origTitle;
+async function exportPrintPDF() {
+  const btn = document.querySelector('#pdf-dropdown-wrapper > button');
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 생성 중...';
+  try {
+    const now = new Date();
+    const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const hospVal = document.getElementById('print-hospital-filter').value;
+    const hospName = hospVal === 'all' ? '전체기관' : hospVal;
+    const container = document.getElementById('print-report-content');
+    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const imgW = pageW - 10;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    let yPos = 5;
+    let remaining = imgH;
+    let srcY = 0;
+    while (remaining > 0) {
+      const sliceH = Math.min(remaining, pageH - 10);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = (sliceH / imgW) * canvas.width;
+      const ctx = sliceCanvas.getContext('2d');
+      ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
+      if (srcY > 0) doc.addPage();
+      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 5, 5, imgW, sliceH);
+      srcY += sliceH;
+      remaining -= sliceH;
+    }
+    doc.save(`BELL-001-S-KR-003_사용현황_${hospName}_${ts}.pdf`);
+  } catch(e) {
+    alert('PDF 생성 실패: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
 }
 
 /* ── PDF 드롭다운 ───────────────────────────────────────────────────── */
