@@ -448,7 +448,7 @@ function calcElapsedDays(startDt, referenceDt) {
   const deltaMs = referenceDt - anchor;
   // 가입일 = Day 1 (정오 전이어도 Day 1)
   if (deltaMs < 0) return 1;
-  return Math.min(Math.floor(deltaMs / 86400000) + 1, MAX_DAYS);
+  return Math.floor(deltaMs / 86400000) + 1; // cap은 prescribed_days로 per-user 처리
 }
 
 function calcCompliance(usedDays, elapsedDays) {
@@ -563,17 +563,26 @@ function parseCsv(csvText) {
       const startRaw = (r[idx("시작일자")] || "").trim();
       const start_dt = startRaw ? new Date(startRaw) : null;
 
-      // 만료: anchor(시작일 정오) + MAX_DAYS일 정오 직전 (시작일=Day1, 익일 정오 경계)
-      // 예) 3/4 시작 → anchor 3/4 12:00 → Day28=3/31 → 만료=4/1 11:59:59
+      // 만료: 시트의 종료일자 우선 사용, 없으면 시작일 + MAX_DAYS 계산
+      const endDateStr = (r[idx("종료일자")] || "").trim();
       let end_dt = null;
       let endRaw = "";
-      if (start_dt) {
+      if (start_dt && endDateStr) {
+        const parsedEnd = new Date(endDateStr);
+        if (!isNaN(parsedEnd)) {
+          end_dt = parsedEnd;
+          endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
+        }
+      }
+      if (!end_dt && start_dt) {
         const endAnchor = new Date(start_dt);
         endAnchor.setHours(12, 0, 0, 0);
         end_dt = new Date(endAnchor.getTime() + MAX_DAYS * 86400000);
         end_dt.setHours(11, 59, 59, 999);
         endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
       }
+      // 처방 일수: 종료일자 기반 per-user (최대 MAX_DAYS)
+      const prescribed_days = (start_dt && end_dt) ? Math.min(calcElapsedDays(start_dt, end_dt), MAX_DAYS) : MAX_DAYS;
 
       // used_days: sessionMap 날짜 → day number 변환
       const rawSessions = sessionMap[userId] || {};
@@ -587,7 +596,7 @@ function parseCsv(csvText) {
           const diffMs = sessDate - anchor;
           if (diffMs < 0) return;
           const dayNum = Math.floor(diffMs / 86400000);
-          if (dayNum >= 0 && dayNum < MAX_DAYS) {
+          if (dayNum >= 0 && dayNum < prescribed_days) {
             userSessions[dayNum] = (userSessions[dayNum] || []).concat(entries);
           }
         });
@@ -602,9 +611,9 @@ function parseCsv(csvText) {
       // elapsed_days: 히트맵 렌더링용 (1-based)
       let elapsed_days;
       if (is_dropout) {
-        elapsed_days = start_dt ? Math.min(calcElapsedDays(start_dt, dropout_dt), MAX_DAYS) : 0;
+        elapsed_days = start_dt ? Math.min(calcElapsedDays(start_dt, dropout_dt), prescribed_days) : 0;
       } else {
-        elapsed_days = start_dt ? (is_ended ? MAX_DAYS : calcElapsedDays(start_dt, ref)) : 0;
+        elapsed_days = start_dt ? (is_ended ? prescribed_days : Math.min(calcElapsedDays(start_dt, ref), prescribed_days)) : 0;
       }
       // completedDays: 순응도 계산용
       const completedDays = (is_ended || is_dropout) ? elapsed_days : Math.max(elapsed_days - 1, 0);
@@ -648,6 +657,7 @@ function parseCsv(csvText) {
         is_ended: !!is_ended,
         is_dropout,
         dropout_dt,
+        prescribed_days,
         is_loaner,
         sessions: is_dropout ? filteredSessions : userSessions, // { dayN: [sessionId, ...] }
       };
@@ -1361,8 +1371,9 @@ function renderPrintReport() {
 
   html += `<table class="print-table"><thead><tr>`;
   html += `<th>피험자번호</th><th>처방 시작일</th>`;
-  for (let w = 0; w < 4; w++) {
-    for (let d = 0; d < 7; d++) { const di = w*7+d; html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${(d===0&&w>0)||di===24?'border-left:3px solid #737373;':''}">${di+1}</th>`; }
+  for (let di = 0; di < MAX_DAYS; di++) {
+    const borderStyle = (di > 0 && di % 7 === 0) || di === 24 ? 'border-left:3px solid #737373;' : '';
+    html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${borderStyle}">${di+1}</th>`;
   }
   html += `<th>처방 종료일</th><th>경과일</th><th>사용일</th><th>사용률(%)</th><th>미달</th><th>공기계</th>`;
   html += `</tr></thead><tbody>`;
@@ -1391,13 +1402,16 @@ function renderPrintReport() {
     html += `<tr class="${printRowClass}">`;
     html += `<td style="font-weight:600;">${r.subject_id}${dropoutLabel}</td>`;
     html += `<td class="num">${r.start_str || '-'}</td>`;
-    for (let w = 0; w < 4; w++) {
-      for (let d = 0; d < 7; d++) {
-        const dayIdx = w * 7 + d;
+    for (let dayIdx = 0; dayIdx < MAX_DAYS; dayIdx++) {
+      {
+        const d = dayIdx % 7; const w = Math.floor(dayIdx / 7);
         const daySessions = sess[dayIdx] || [];
         let cls, content = '';
         const isPrintToday = (dayIdx + 1) === calcElapsedDays(r.start_dt, new Date()) && !r.is_ended && !r.is_dropout;
-        if (r.is_dropout && dayIdx >= r.elapsed_days) {
+        if (dayIdx >= r.prescribed_days) {
+          // 처방 기간 외 (30일 버퍼 초과)
+          cls = 'future do-after';
+        } else if (r.is_dropout && dayIdx >= r.elapsed_days) {
           // Drop-out 이후: 진한 회색
           cls = 'future do-after';
         } else if (dayIdx >= r.elapsed_days || isPrintToday) {
