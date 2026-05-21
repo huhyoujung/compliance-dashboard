@@ -948,7 +948,7 @@ function renderHeatmap() {
   const yLabels = rows.map(r => {
     const endDt = r.is_dropout ? r.dropout_dt : r.end_dt;
     const endStr = endDt ? `${endDt.getMonth()+1}/${endDt.getDate()}` : '';
-    const tag = r.is_dropout ? `D/O ${endStr}` : (endStr ? `~${endStr}` : '');
+    const tag = endStr ? `~${endStr}` : '';
     return tag ? `${r.subject_id} (${tag})` : r.subject_id;
   });
 
