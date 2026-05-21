@@ -857,7 +857,7 @@ function buildMiniHeatmapHTML(r) {
     const label = d + 1;
     const isTodayCell = label === todayLabel && !r.is_ended && !r.is_dropout;
     const isPrescribedEnd = d === r.prescribed_days - 1; // 처방 마지막 일차
-    const prescribedEndStyle = isPrescribedEnd ? ' style="border-right:3px solid #171717;"' : '';
+    const prescribedEndStyle = isPrescribedEnd ? ' style="border-right:2px solid #a3a3a3;"' : '';
     if (d >= r.elapsed_days || isTodayCell) {
       if (isTodayCell && daySessions.length > 0) {
         const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
@@ -1062,7 +1062,7 @@ function renderHeatmap() {
         type: "line",
         x0: r.prescribed_days - 0.5, x1: r.prescribed_days - 0.5,
         y0: i - 0.5, y1: i + 0.5,
-        line: { color: "#f59e0b", width: 4 }, layer: "above",
+        line: { color: "#a3a3a3", width: 2 }, layer: "above",
       })),
     ],
     plot_bgcolor: "#fafafa",
@@ -1453,7 +1453,7 @@ function renderPrintReport() {
         } else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
         const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? `border-left:3px solid #737373;` : '';
-        const endBorder = dayIdx === r.prescribed_days - 1 ? `border-right:3px solid #171717;` : '';
+        const endBorder = dayIdx === r.prescribed_days - 1 ? `border-right:2px solid #a3a3a3;` : '';
         html += `<td class="hm ${cls}" style="${weekBorder}${endBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
