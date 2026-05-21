@@ -1476,28 +1476,38 @@ async function exportPrintPDF() {
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-    const imgData = canvas.toDataURL('image/png');
+    // 전체 콘텐츠 크기로 캡처 (가로/세로 잘림 방지)
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      width: container.scrollWidth,
+      height: container.scrollHeight,
+      windowWidth: container.scrollWidth,
+      scrollX: 0,
+      scrollY: 0,
+    });
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const imgW = pageW - 10;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    let yPos = 5;
-    let remaining = imgH;
-    let srcY = 0;
-    while (remaining > 0) {
-      const sliceH = Math.min(remaining, pageH - 10);
+    const margin = 5;
+    const usableW = pageW - margin * 2;
+    const usableH = pageH - margin * 2;
+    const pxPerMm = (canvas.width / 2) / usableW;
+    const sliceHeightPx = Math.floor(usableH * pxPerMm) * 2;
+    let offsetPx = 0;
+    let page = 0;
+    while (offsetPx < canvas.height) {
+      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
       const sliceCanvas = document.createElement('canvas');
       sliceCanvas.width = canvas.width;
-      sliceCanvas.height = (sliceH / imgW) * canvas.width;
-      const ctx = sliceCanvas.getContext('2d');
-      ctx.drawImage(canvas, 0, srcY * canvas.width / imgW, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-      if (srcY > 0) doc.addPage();
-      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 5, 5, imgW, sliceH);
-      srcY += sliceH;
-      remaining -= sliceH;
+      sliceCanvas.height = sliceH;
+      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if (page > 0) doc.addPage();
+      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH / pxPerMm / 2);
+      offsetPx += sliceH;
+      page++;
     }
     const pdfBlob = doc.output('blob');
     const a = document.createElement('a');
