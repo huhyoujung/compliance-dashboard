@@ -234,6 +234,9 @@
     </div>
 
     <div id="tab-table">
+      <div class="mb-3">
+        <input id="table-search" type="text" placeholder="피험자번호 또는 기관 검색..." oninput="renderTable()" class="w-full max-w-xs px-3.5 py-2 text-sm border border-neutral-200 rounded-lg bg-white text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-400" />
+      </div>
       <div class="overflow-x-auto rounded-xl border border-neutral-200">
         <table id="patient-table" class="w-full border-collapse text-[13px] bg-white">
           <thead>
@@ -246,6 +249,7 @@
               <th onclick="sortTable('used_days')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용일 ↕</th>
               <th onclick="sortTable('compliance')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">사용률(%) ↕</th>
               <th onclick="sortTable('yellow_cards')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">옐로카드 ↕</th>
+              <th onclick="sortTable('is_loaner')" class="bg-neutral-50 px-3.5 py-3 text-left font-semibold text-neutral-500 border-b border-neutral-200 whitespace-nowrap text-xs uppercase tracking-wide">공기계 ↕</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -783,7 +787,13 @@ function sortTable(key) {
 }
 
 function renderTable() {
-  let rows = [...filteredRows];
+  const searchVal = (document.getElementById('table-search')?.value || '').trim().toLowerCase();
+  let rows = searchVal
+    ? [...filteredRows].filter(r =>
+        r.subject_id.toLowerCase().includes(searchVal) ||
+        r.hospital.toLowerCase().includes(searchVal)
+      )
+    : [...filteredRows];
 
   rows.sort((a, b) => {
     let va = a[sortKey], vb = b[sortKey];
