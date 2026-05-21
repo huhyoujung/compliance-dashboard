@@ -1476,7 +1476,12 @@ async function exportPrintPDF() {
       srcY += sliceH;
       remaining -= sliceH;
     }
-    doc.save(`BELL-001-S-KR-003_사용현황_${hospName}_${ts}.pdf`);
+    const pdfBlob = doc.output('blob');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(pdfBlob);
+    a.download = `BELL-001-S-KR-003_사용현황_${hospName}_${ts}.pdf`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   } catch(e) {
     alert('PDF 생성 실패: ' + e.message);
   } finally {
