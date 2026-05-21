@@ -946,12 +946,7 @@ function renderHeatmap() {
 
   const matrix = [];
   const hoverTexts = [];
-  const yLabels = rows.map(r => {
-    const endDt = r.is_dropout ? r.dropout_dt : r.end_dt;
-    const endStr = endDt ? `${endDt.getMonth()+1}/${endDt.getDate()}` : '';
-    const tag = endStr ? `~${endStr}` : '';
-    return tag ? `${r.subject_id} (${tag})` : r.subject_id;
-  });
+  const yLabels = rows.map(r => r.subject_id);
 
   rows.forEach(r => {
     const rowVals  = [];
