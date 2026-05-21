@@ -1476,17 +1476,32 @@ async function exportPrintPDF() {
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    // 전체 콘텐츠 크기로 캡처 (가로/세로 잘림 방지)
+    // 캡처 전 overflow 해제 + 전체 크기 노출
+    const prevOverflow = container.style.overflow;
+    const prevMaxH = container.style.maxHeight;
+    container.style.overflow = 'visible';
+    container.style.maxHeight = 'none';
+    const table = container.querySelector('table');
+    const prevTableOverflow = table ? table.style.overflow : '';
+    if (table) table.style.overflow = 'visible';
+    await new Promise(r => setTimeout(r, 50));
+    const fullW = container.scrollWidth;
+    const fullH = container.scrollHeight;
     const canvas = await html2canvas(container, {
       scale: 2,
       backgroundColor: '#ffffff',
       useCORS: true,
-      width: container.scrollWidth,
-      height: container.scrollHeight,
-      windowWidth: container.scrollWidth,
+      width: fullW,
+      height: fullH,
+      windowWidth: fullW + 200,
       scrollX: 0,
-      scrollY: 0,
+      scrollY: -window.scrollY,
+      ignoreElements: el => el.classList?.contains('no-print'),
     });
+    // 원복
+    container.style.overflow = prevOverflow;
+    container.style.maxHeight = prevMaxH;
+    if (table) table.style.overflow = prevTableOverflow;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
