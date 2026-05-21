@@ -1375,7 +1375,7 @@ function renderPrintReport() {
     const borderStyle = (di > 0 && di % 7 === 0) || di === 24 ? 'border-left:3px solid #737373;' : '';
     html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${borderStyle}">${di+1}</th>`;
   }
-  html += `<th>처방 종료일</th><th>경과일</th><th>사용일</th><th>사용률(%)</th><th>미달</th><th>공기계</th>`;
+  html += `<th>처방일</th><th>경과일</th><th>사용일</th><th>사용률(%)</th><th>미달</th><th>공기계</th>`;
   html += `</tr></thead><tbody>`;
 
   rows.forEach(r => {
@@ -1429,7 +1429,7 @@ function renderPrintReport() {
         html += `<td class="hm ${cls}" style="${weekBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
-    html += `<td class="num">${r.end_str || '-'}</td>`;
+    html += `<td class="num">${r.prescribed_days}</td>`;
     html += `<td class="num">${r.elapsed_days}</td>`;
     html += `<td class="num">${r.used_days}</td>`;
     html += `<td class="num" style="font-weight:600;">${comp}</td>`;
