@@ -1476,32 +1476,24 @@ async function exportPrintPDF() {
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    // 캡처 전 overflow 해제 + 전체 크기 노출
-    const prevOverflow = container.style.overflow;
-    const prevMaxH = container.style.maxHeight;
-    container.style.overflow = 'visible';
-    container.style.maxHeight = 'none';
-    const table = container.querySelector('table');
-    const prevTableOverflow = table ? table.style.overflow : '';
-    if (table) table.style.overflow = 'visible';
-    await new Promise(r => setTimeout(r, 50));
-    const fullW = container.scrollWidth;
-    const fullH = container.scrollHeight;
-    const canvas = await html2canvas(container, {
+    // 컨테이너를 body에 절대위치로 복사해서 캡처 (부모 clip 우회)
+    const clone = container.cloneNode(true);
+    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;';
+    document.body.appendChild(clone);
+    await new Promise(r => setTimeout(r, 80));
+    const fullW = clone.scrollWidth;
+    const fullH = clone.scrollHeight;
+    const canvas = await html2canvas(clone, {
       scale: 2,
       backgroundColor: '#ffffff',
       useCORS: true,
       width: fullW,
       height: fullH,
-      windowWidth: fullW + 200,
+      windowWidth: fullW,
       scrollX: 0,
-      scrollY: -window.scrollY,
-      ignoreElements: el => el.classList?.contains('no-print'),
+      scrollY: 0,
     });
-    // 원복
-    container.style.overflow = prevOverflow;
-    container.style.maxHeight = prevMaxH;
-    if (table) table.style.overflow = prevTableOverflow;
+    document.body.removeChild(clone);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
