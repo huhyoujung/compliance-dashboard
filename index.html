@@ -574,6 +574,10 @@ function parseCsv(csvText) {
       if (start_dt && endDateStr) {
         const parsedEnd = new Date(endDateStr);
         if (!isNaN(parsedEnd)) {
+          // 종료일자가 자정(00:00)으로 파싱되는 경우 하루 마지막(23:59:59)으로 보정
+          if (parsedEnd.getHours() === 0 && parsedEnd.getMinutes() === 0) {
+            parsedEnd.setHours(23, 59, 59, 999);
+          }
           end_dt = parsedEnd;
           endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
         }
