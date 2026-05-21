@@ -856,18 +856,20 @@ function buildMiniHeatmapHTML(r) {
     const daySessions = sess[d] || [];
     const label = d + 1;
     const isTodayCell = label === todayLabel && !r.is_ended && !r.is_dropout;
+    const isPrescribedEnd = d === r.prescribed_days - 1; // 처방 마지막 일차
+    const prescribedEndStyle = isPrescribedEnd ? ' style="border-right:3px solid #171717;"' : '';
     if (d >= r.elapsed_days || isTodayCell) {
       if (isTodayCell && daySessions.length > 0) {
         const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
-        cells += `<div class="mh-cell used today" title="${times}">${label}</div>`;
+        cells += `<div class="mh-cell used today"${prescribedEndStyle} title="${times}">${label}</div>`;
       } else {
-        cells += `<div class="mh-cell future${isTodayCell ? ' today' : ''}">${label}</div>`;
+        cells += `<div class="mh-cell future${isTodayCell ? ' today' : ''}"${prescribedEndStyle}>${label}</div>`;
       }
     } else if (daySessions.length > 0) {
       const times = daySessions.map(e => (e.kstDate || '') + ' ' + e.kstTime + ' KST').join(', ');
-      cells += `<div class="mh-cell used" title="${times}">${label}</div>`;
+      cells += `<div class="mh-cell used"${prescribedEndStyle} title="${times}">${label}</div>`;
     } else {
-      cells += `<div class="mh-cell unused">${label}</div>`;
+      cells += `<div class="mh-cell unused"${prescribedEndStyle}>${label}</div>`;
     }
     // 매 7일 끝(6,13,20,27)에 주별 순응도 배지 삽입
     if ((d + 1) % 7 === 0) {
@@ -1044,10 +1046,20 @@ function renderHeatmap() {
       gridcolor: "#f5f5f5",
       linecolor: "#e5e5e5",
     },
-    shapes: [6.5, 13.5, 20.5, 23.5].map(x => ({
-      type: "line", x0: x, x1: x, y0: -0.5, y1: rows.length - 0.5,
-      line: { color: "#171717", width: 3.5 }, layer: "above",
-    })),
+    shapes: [
+      // 체크포인트 구분선
+      ...[6.5, 13.5, 20.5, 23.5].map(x => ({
+        type: "line", x0: x, x1: x, y0: -0.5, y1: rows.length - 0.5,
+        line: { color: "#171717", width: 3.5 }, layer: "above",
+      })),
+      // 처방 종료 표시선 (환자별)
+      ...rows.map((r, i) => ({
+        type: "line",
+        x0: r.prescribed_days - 0.5, x1: r.prescribed_days - 0.5,
+        y0: i - 0.5, y1: i + 0.5,
+        line: { color: "#f59e0b", width: 4 }, layer: "above",
+      })).filter(s => s.x0 !== 27.5), // 28일(기본)은 생략
+    ],
     plot_bgcolor: "#fafafa",
     paper_bgcolor: "white",
     hoverlabel: {
@@ -1436,7 +1448,8 @@ function renderPrintReport() {
         } else if (daySessions.length > 0) { cls = 'used'; }
         else { cls = 'unused'; content = '<svg viewBox="0 0 1 1" preserveAspectRatio="none"><line x1="0" y1="0" x2="1" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/><line x1="1" y1="0" x2="0" y2="1" stroke="#171717" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>'; }
         const weekBorder = (d === 0 && w > 0) || dayIdx === 24 ? `border-left:3px solid #737373;` : '';
-        html += `<td class="hm ${cls}" style="${weekBorder}" title="${dayIdx+1}일차">${content}</td>`;
+        const endBorder = dayIdx === r.prescribed_days - 1 ? `border-right:3px solid #171717;` : '';
+        html += `<td class="hm ${cls}" style="${weekBorder}${endBorder}" title="${dayIdx+1}일차">${content}</td>`;
       }
     }
     html += `<td class="num">${r.prescribed_days}</td>`;
