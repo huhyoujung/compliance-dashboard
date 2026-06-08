@@ -421,6 +421,7 @@ let tableHospitalTab = "all"; // "all" | hospital name
 const DROPOUT_MAP = {
   "h01-R1006": "2026-04-20",  // 4/20 오전 11:59까지
   "h06-R1019": "2026-04-28",  // 4/28 오전 11:59까지
+  "h01-R1026": "2026-05-28",  // 5/28 오전 11:59까지
 };
 
 function getDropoutDate(subjectId) {
@@ -585,8 +586,8 @@ function parseCsv(csvText) {
         end_dt.setHours(11, 59, 59, 999);
         endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
       }
-      // 처방 일수: 종료일자 기반 per-user (최대 MAX_DAYS)
-      const prescribed_days = (start_dt && end_dt) ? Math.min(calcElapsedDays(start_dt, end_dt), MAX_DAYS) : MAX_DAYS;
+      // 처방 일수: 종료일자 기반 per-user (연장 처방 허용, 기본값 MAX_DAYS)
+      const prescribed_days = (start_dt && end_dt) ? calcElapsedDays(start_dt, end_dt) : MAX_DAYS;
 
       // used_days: sessionMap 날짜 → day number 변환
       const rawSessions = sessionMap[userId] || {};
@@ -852,7 +853,7 @@ function buildMiniHeatmapHTML(r) {
   let cells = '';
   // 오늘이 몇 일차인지 계산 (1-based)
   const todayLabel = r.start_dt ? calcElapsedDays(r.start_dt, new Date()) : -1;
-  for (let d = 0; d < MAX_DAYS; d++) {
+  for (let d = 0; d < r.prescribed_days; d++) {
     const daySessions = sess[d] || [];
     const label = d + 1;
     const isTodayCell = label === todayLabel && !r.is_ended && !r.is_dropout;
@@ -947,12 +948,13 @@ function renderHeatmap() {
   const matrix = [];
   const hoverTexts = [];
   const yLabels = rows.map(r => r.subject_id);
+  const colCount = rows.length > 0 ? Math.max(...rows.map(r => r.prescribed_days)) : MAX_DAYS;
 
   rows.forEach(r => {
     const rowVals  = [];
     const rowHover = [];
     const sess = r.sessions || {};
-    for (let d = 0; d < MAX_DAYS; d++) {
+    for (let d = 0; d < colCount; d++) {
       const dayOffset = d * 86400000;
       const dayDt = r.start_dt ? new Date(r.start_dt.getTime() + dayOffset) : null;
       const nextDt = r.start_dt ? new Date(r.start_dt.getTime() + (d + 1) * 86400000) : null;
@@ -1007,7 +1009,7 @@ function renderHeatmap() {
     hoverTexts.push(rowHover);
   });
 
-  const xLabels = Array.from({length: MAX_DAYS}, (_, i) => `${i+1}일`);
+  const xLabels = Array.from({length: colCount}, (_, i) => `${i+1}일`);
 
   const colorscale = [
     [0/5, "#fca5a5"], [0.99/5, "#fca5a5"],   // 0 = 미사용
@@ -1048,8 +1050,8 @@ function renderHeatmap() {
       linecolor: "#e5e5e5",
     },
     shapes: [
-      // 체크포인트 구분선
-      ...[6.5, 13.5, 20.5, 23.5].map(x => ({
+      // 체크포인트 구분선 (7/14/21/24일, 연장 시 28일 추가)
+      ...[6.5, 13.5, 20.5, 23.5, ...(colCount > 28 ? [27.5] : [])].map(x => ({
         type: "line", x0: x, x1: x, y0: -0.5, y1: rows.length - 0.5,
         line: { color: "#171717", width: 3.5 }, layer: "above",
       })),
@@ -1395,9 +1397,10 @@ function renderPrintReport() {
   html += `<div style="font-size:11px;color:#737373;margin-top:4px;">${hospitalName} | 기준일: ${fmtDate(today)} | 대상: ${rows.length}명</div>`;
   html += `</div>`;
 
+  const printColCount = rows.length > 0 ? Math.max(...rows.map(r => r.prescribed_days)) : MAX_DAYS;
   html += `<table class="print-table"><thead><tr>`;
   html += `<th>피험자번호</th><th>처방 시작일</th>`;
-  for (let di = 0; di < MAX_DAYS; di++) {
+  for (let di = 0; di < printColCount; di++) {
     const borderStyle = (di > 0 && di % 7 === 0) || di === 24 ? 'border-left:3px solid #737373;' : '';
     html += `<th style="padding:2px 1px;min-width:16px;font-size:9px;color:#a3a3a3;${borderStyle}">${di+1}</th>`;
   }
@@ -1428,7 +1431,7 @@ function renderPrintReport() {
     html += `<tr class="${printRowClass}">`;
     html += `<td style="font-weight:600;">${r.subject_id}${dropoutLabel}</td>`;
     html += `<td class="num">${r.start_str || '-'}</td>`;
-    for (let dayIdx = 0; dayIdx < MAX_DAYS; dayIdx++) {
+    for (let dayIdx = 0; dayIdx < printColCount; dayIdx++) {
       {
         const d = dayIdx % 7; const w = Math.floor(dayIdx / 7);
         const daySessions = sess[dayIdx] || [];
