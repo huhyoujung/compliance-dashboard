@@ -1555,13 +1555,22 @@ async function exportPrintPDF() {
     const margin = 5;
     const usableW = doc.internal.pageSize.getWidth() - margin * 2;
     const usableH = doc.internal.pageSize.getHeight() - margin * 2;
-    // 한 페이지에 맞게 축소 (가로/세로 모두 fit)
-    const aspectRatio = canvas.width / canvas.height;
-    const fitByW = usableW;
-    const fitByH = usableH * aspectRatio;
-    const imgW_mm = Math.min(fitByW, fitByH);
-    const imgH_mm = imgW_mm / aspectRatio;
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW_mm, imgH_mm);
+    // 가로 꽉 채우고, 세로가 넘치면 다음 페이지로 슬라이싱
+    const scale = usableW / canvas.width;          // px → mm 변환 비율
+    const sliceHeightPx = Math.floor(usableH / scale);
+    let offsetPx = 0;
+    let page = 0;
+    while (offsetPx < canvas.height) {
+      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceH;
+      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if (page > 0) doc.addPage();
+      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH * scale);
+      offsetPx += sliceH;
+      page++;
+    }
     const pdfBlob = doc.output('blob');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(pdfBlob);
@@ -1631,17 +1640,22 @@ async function exportAllHospitalPDFs() {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const usableW = doc.internal.pageSize.getWidth() - margin * 2;
     const usableH = doc.internal.pageSize.getHeight() - margin * 2;
-    // 한 페이지에 맞게 축소
-    const aspectRatio = canvas.width / canvas.height;
-    const fitByW = usableW;
-    const fitByH = usableH * aspectRatio;
-    const imgW_mm = Math.min(fitByW, fitByH);
-    const imgH_mm = imgW_mm / aspectRatio;
-    doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW_mm, imgH_mm);
-
-    const fileName = `BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`;
-    zip.file(fileName, doc.output('arraybuffer'));
-  }
+    // 가로 꽉 채우고, 세로가 넘치면 다음 페이지로 슬라이싱
+    const scale = usableW / canvas.width;
+    const sliceHeightPx = Math.floor(usableH / scale);
+    let offsetPx = 0;
+    let page = 0;
+    while (offsetPx < canvas.height) {
+      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceH;
+      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      if (page > 0) doc.addPage();
+      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH * scale);
+      offsetPx += sliceH;
+      page++;
+    }
 
   sel.value = origHospVal;
   renderPrintReport();
