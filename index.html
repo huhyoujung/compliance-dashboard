@@ -1520,66 +1520,123 @@ function applyInlineHmStyles(el) {
   });
 }
 
+/* ── PDF 내보내기 공통 유틸 ─────────────────────────────────────────── */
+function showExportOverlay(msg) {
+  const el = document.createElement('div');
+  el.id = 'export-overlay';
+  el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(255,255,255,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  el.innerHTML = `
+    <div style="font-size:14px;font-weight:600;color:#171717;">${msg}</div>
+    <div style="width:260px;height:6px;background:#e5e5e5;border-radius:999px;overflow:hidden;">
+      <div id="export-progress-bar" style="height:100%;width:0%;background:#171717;border-radius:999px;transition:width 0.25s;"></div>
+    </div>
+    <div id="export-progress-text" style="font-size:11px;color:#737373;"></div>
+  `;
+  document.body.appendChild(el);
+}
+function hideExportOverlay() {
+  const el = document.getElementById('export-overlay');
+  if (el) el.remove();
+}
+function updateExportProgress(pct, text) {
+  const bar = document.getElementById('export-progress-bar');
+  const txt = document.getElementById('export-progress-text');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = text || '';
+}
+
+// 행 경계를 인식하는 캔버스 슬라이스 포인트 계산
+function getRowAwareSlicePoints(clone, canvasHeight, sliceHeightPx) {
+  const table = clone.querySelector('.print-table');
+  if (!table) return null;
+  const cloneRect = clone.getBoundingClientRect();
+  // scale:2 이므로 px * 2
+  const rowBottoms = [...table.querySelectorAll('tbody tr')]
+    .map(tr => Math.round((tr.getBoundingClientRect().bottom - cloneRect.top) * 2));
+  const points = [0];
+  let pageStart = 0;
+  while (pageStart < canvasHeight) {
+    const pageEnd = pageStart + sliceHeightPx;
+    if (pageEnd >= canvasHeight) break;
+    // 이 페이지에 들어오는 마지막 행 끝을 슬라이스 포인트로 사용
+    const candidates = rowBottoms.filter(b => b > pageStart && b <= pageEnd);
+    const cut = candidates.length > 0 ? candidates[candidates.length - 1] : pageEnd;
+    points.push(cut);
+    pageStart = cut;
+  }
+  points.push(canvasHeight);
+  return points;
+}
+
+// 캔버스를 슬라이스 포인트로 PDF에 추가
+function addCanvasToPDF(doc, canvas, slicePoints, margin, usableW) {
+  const scale = usableW / canvas.width;
+  slicePoints.forEach((start, i) => {
+    if (i === slicePoints.length - 1) return;
+    const end = slicePoints[i + 1];
+    const h = end - start;
+    const sc = document.createElement('canvas');
+    sc.width = canvas.width; sc.height = h;
+    sc.getContext('2d').drawImage(canvas, 0, start, canvas.width, h, 0, 0, canvas.width, h);
+    if (i > 0) doc.addPage();
+    doc.addImage(sc.toDataURL('image/png'), 'PNG', margin, margin, usableW, h * scale);
+  });
+}
+
+async function captureContainerCanvas(container) {
+  const tabPrint = document.getElementById('tab-print');
+  const clone = container.cloneNode(true);
+  applyInlineHmStyles(clone);
+  // 오버레이 뒤에 숨겨서 렌더링 (z-index 오버레이=100000, clone=99999)
+  clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
+  tabPrint.appendChild(clone);
+  await new Promise(r => setTimeout(r, 80));
+  const fullW = clone.scrollWidth;
+  const fullH = clone.scrollHeight;
+  const canvas = await html2canvas(clone, {
+    scale: 2, backgroundColor: '#ffffff', useCORS: true,
+    width: fullW, height: fullH, windowWidth: fullW, scrollX: 0, scrollY: 0,
+  });
+  // 행 경계 계산 (clone 제거 전)
+  const { jsPDF: _j } = window.jspdf;
+  const _doc = new _j({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const margin = 5;
+  const usableW = _doc.internal.pageSize.getWidth() - margin * 2;
+  const usableH = _doc.internal.pageSize.getHeight() - margin * 2;
+  const pxPerMm = canvas.width / usableW;
+  const sliceHeightPx = Math.floor(usableH * pxPerMm);
+  const slicePoints = getRowAwareSlicePoints(clone, canvas.height, sliceHeightPx);
+  tabPrint.removeChild(clone);
+  return { canvas, slicePoints, margin, usableW };
+}
+
 async function exportPrintPDF() {
   const btn = document.querySelector('#pdf-dropdown-wrapper > button');
   const origHTML = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ 생성 중...';
+  showExportOverlay('📄 PDF 생성 중...');
+  updateExportProgress(10, '캡처 중...');
   try {
     const now = new Date();
     const ts = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    const tabPrint = document.getElementById('tab-print');
-    const clone = container.cloneNode(true);
-    applyInlineHmStyles(clone);
-    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
-    tabPrint.appendChild(clone);
-    await new Promise(r => setTimeout(r, 80));
-    const fullW = clone.scrollWidth;
-    const fullH = clone.scrollHeight;
-    const canvas = await html2canvas(clone, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      width: fullW,
-      height: fullH,
-      windowWidth: fullW,
-      scrollX: 0,
-      scrollY: 0,
-    });
-    tabPrint.removeChild(clone);
+    const { canvas, slicePoints, margin, usableW } = await captureContainerCanvas(container);
+    updateExportProgress(70, 'PDF 변환 중...');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const margin = 5;
-    const usableW = doc.internal.pageSize.getWidth() - margin * 2;
-    const usableH = doc.internal.pageSize.getHeight() - margin * 2;
-    // 가로 꽉 채우고, 세로가 넘치면 다음 페이지로 슬라이싱
-    const scale = usableW / canvas.width;          // px → mm 변환 비율
-    const sliceHeightPx = Math.floor(usableH / scale);
-    let offsetPx = 0;
-    let page = 0;
-    while (offsetPx < canvas.height) {
-      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = sliceH;
-      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-      if (page > 0) doc.addPage();
-      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH * scale);
-      offsetPx += sliceH;
-      page++;
-    }
-    const pdfBlob = doc.output('blob');
+    addCanvasToPDF(doc, canvas, slicePoints, margin, usableW);
+    updateExportProgress(95, '저장 중...');
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(pdfBlob);
+    a.href = URL.createObjectURL(doc.output('blob'));
     a.download = `BELL-001-S-KR-003_사용현황_${hospName}_${ts}.pdf`;
     a.click();
     URL.revokeObjectURL(a.href);
   } catch(e) {
     alert('PDF 생성 실패: ' + e.message);
   } finally {
+    hideExportOverlay();
     btn.disabled = false;
     btn.innerHTML = origHTML;
   }
@@ -1605,7 +1662,7 @@ async function exportAllHospitalPDFs() {
   const btn = document.querySelector('#pdf-dropdown-wrapper > button');
   const origText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ 생성 중...';
+  showExportOverlay('📦 기관별 PDF 생성 중...');
 
   const { jsPDF } = window.jspdf;
   const zip = new JSZip();
@@ -1614,65 +1671,39 @@ async function exportAllHospitalPDFs() {
 
   const sel = document.getElementById('print-hospital-filter');
   const origHospVal = sel.value;
-
   const container = document.getElementById('print-report-content');
 
-  for (const hosp of hospitals) {
-    sel.value = hosp;
-    renderPrintReport();
-    await new Promise(r => setTimeout(r, 100));
-
-    const tabPrint = document.getElementById('tab-print');
-    const clone = container.cloneNode(true);
-    applyInlineHmStyles(clone);
-    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
-    tabPrint.appendChild(clone);
-    await new Promise(r => setTimeout(r, 80));
-    const fullW = clone.scrollWidth;
-    const fullH = clone.scrollHeight;
-    const canvas = await html2canvas(clone, {
-      scale: 2, backgroundColor: '#ffffff', useCORS: true,
-      width: fullW, height: fullH, windowWidth: fullW, scrollX: 0, scrollY: 0,
-    });
-    tabPrint.removeChild(clone);
-
-    const margin = 5;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const usableW = doc.internal.pageSize.getWidth() - margin * 2;
-    const usableH = doc.internal.pageSize.getHeight() - margin * 2;
-    // 가로 꽉 채우고, 세로가 넘치면 다음 페이지로 슬라이싱
-    const scale = usableW / canvas.width;
-    const sliceHeightPx = Math.floor(usableH / scale);
-    let offsetPx = 0;
-    let page = 0;
-    while (offsetPx < canvas.height) {
-      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = sliceH;
-      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-      if (page > 0) doc.addPage();
-      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH * scale);
-      offsetPx += sliceH;
-      page++;
+  try {
+    for (let hi = 0; hi < hospitals.length; hi++) {
+      const hosp = hospitals[hi];
+      const pct = Math.round((hi / hospitals.length) * 80);
+      updateExportProgress(pct, `${hosp} (${hi + 1}/${hospitals.length})`);
+      sel.value = hosp;
+      renderPrintReport();
+      await new Promise(r => setTimeout(r, 100));
+      const { canvas, slicePoints, margin, usableW } = await captureContainerCanvas(container);
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      addCanvasToPDF(doc, canvas, slicePoints, margin, usableW);
+      zip.file(`BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`, doc.output('arraybuffer'));
     }
-
-    const fileName = `BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`;
-    zip.file(fileName, doc.output('arraybuffer'));
+    updateExportProgress(90, 'ZIP 압축 중...');
+    sel.value = origHospVal;
+    renderPrintReport();
+    const blob = await zip.generateAsync({ type: 'blob' });
+    updateExportProgress(100, '완료!');
+    await new Promise(r => setTimeout(r, 300));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `BELL-001-S-KR-003_사용현황_전체기관_${ts}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(e) {
+    alert('PDF 생성 실패: ' + e.message);
+  } finally {
+    hideExportOverlay();
+    btn.disabled = false;
+    btn.innerHTML = origText;
   }
-
-  sel.value = origHospVal;
-  renderPrintReport();
-
-  const blob = await zip.generateAsync({ type: 'blob' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `BELL-001-S-KR-003_사용현황_전체기관_${ts}.zip`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-
-  btn.disabled = false;
-  btn.innerHTML = origText;
 }
 
 // ── 탭 전환 ──────────────────────────────────────────────────────────────
