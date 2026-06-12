@@ -1487,10 +1487,11 @@ async function exportPrintPDF() {
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    // 컨테이너를 body에 절대위치로 복사해서 캡처 (부모 clip 우회)
+    // CSS(#tab-print .print-table) 유지: #tab-print 안에 clone 삽입
+    const tabPrint = document.getElementById('tab-print');
     const clone = container.cloneNode(true);
-    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;';
-    document.body.appendChild(clone);
+    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
+    tabPrint.appendChild(clone);
     await new Promise(r => setTimeout(r, 80));
     const fullW = clone.scrollWidth;
     const fullH = clone.scrollHeight;
@@ -1504,29 +1505,19 @@ async function exportPrintPDF() {
       scrollX: 0,
       scrollY: 0,
     });
-    document.body.removeChild(clone);
+    tabPrint.removeChild(clone);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
     const margin = 5;
-    const usableW = pageW - margin * 2;
-    const usableH = pageH - margin * 2;
-    const pxPerMm = (canvas.width / 2) / usableW;
-    const sliceHeightPx = Math.floor(usableH * pxPerMm) * 2;
-    let offsetPx = 0;
-    let page = 0;
-    while (offsetPx < canvas.height) {
-      const sliceH = Math.min(sliceHeightPx, canvas.height - offsetPx);
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = sliceH;
-      sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-      if (page > 0) doc.addPage();
-      doc.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, margin, usableW, sliceH / pxPerMm / 2);
-      offsetPx += sliceH;
-      page++;
-    }
+    const usableW = doc.internal.pageSize.getWidth() - margin * 2;
+    const usableH = doc.internal.pageSize.getHeight() - margin * 2;
+    // 한 페이지에 맞게 축소 (가로/세로 모두 fit)
+    const aspectRatio = canvas.width / canvas.height;
+    const fitByW = usableW;
+    const fitByH = usableH * aspectRatio;
+    const imgW_mm = Math.min(fitByW, fitByH);
+    const imgH_mm = imgW_mm / aspectRatio;
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW_mm, imgH_mm);
     const pdfBlob = doc.output('blob');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(pdfBlob);
@@ -1578,10 +1569,11 @@ async function exportAllHospitalPDFs() {
     renderPrintReport();
     await new Promise(r => setTimeout(r, 100));
 
-    // overflow-x-auto 클립 우회: clone을 body에 절대위치로 붙여 캡처
+    // CSS(#tab-print .print-table) 유지: #tab-print 안에 clone 삽입
+    const tabPrint = document.getElementById('tab-print');
     const clone = container.cloneNode(true);
-    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;';
-    document.body.appendChild(clone);
+    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
+    tabPrint.appendChild(clone);
     await new Promise(r => setTimeout(r, 80));
     const fullW = clone.scrollWidth;
     const fullH = clone.scrollHeight;
@@ -1589,40 +1581,19 @@ async function exportAllHospitalPDFs() {
       scale: 2, backgroundColor: '#ffffff', useCORS: true,
       width: fullW, height: fullH, windowWidth: fullW, scrollX: 0, scrollY: 0,
     });
-    document.body.removeChild(clone);
-    const imgData = canvas.toDataURL('image/png');
-    const imgW = canvas.width;
-    const imgH = canvas.height;
+    tabPrint.removeChild(clone);
 
-    const pdfW = 297;
-    const pdfH = 210;
-    const margin = 10;
-    const contentW = pdfW - margin * 2;
-    const contentH = contentW * (imgH / imgW);
-
+    const margin = 5;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-    if (contentH <= pdfH - margin * 2) {
-      doc.addImage(imgData, 'PNG', margin, margin, contentW, contentH);
-    } else {
-      const pageContentH = pdfH - margin * 2;
-      const pxPerMm = imgW / contentW;
-      let yOffsetPx = 0;
-      let page = 0;
-      while (yOffsetPx < imgH) {
-        if (page > 0) doc.addPage();
-        const sliceH = Math.min(pageContentH * pxPerMm, imgH - yOffsetPx);
-        const sliceCanvas = document.createElement('canvas');
-        sliceCanvas.width = imgW;
-        sliceCanvas.height = sliceH;
-        sliceCanvas.getContext('2d').drawImage(canvas, 0, yOffsetPx, imgW, sliceH, 0, 0, imgW, sliceH);
-        const sliceImg = sliceCanvas.toDataURL('image/png');
-        const sliceMmH = sliceH / pxPerMm;
-        doc.addImage(sliceImg, 'PNG', margin, margin, contentW, sliceMmH);
-        yOffsetPx += sliceH;
-        page++;
-      }
-    }
+    const usableW = doc.internal.pageSize.getWidth() - margin * 2;
+    const usableH = doc.internal.pageSize.getHeight() - margin * 2;
+    // 한 페이지에 맞게 축소
+    const aspectRatio = canvas.width / canvas.height;
+    const fitByW = usableW;
+    const fitByH = usableH * aspectRatio;
+    const imgW_mm = Math.min(fitByW, fitByH);
+    const imgH_mm = imgW_mm / aspectRatio;
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW_mm, imgH_mm);
 
     const fileName = `BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`;
     zip.file(fileName, doc.output('arraybuffer'));
