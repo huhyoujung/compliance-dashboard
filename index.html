@@ -1578,7 +1578,18 @@ async function exportAllHospitalPDFs() {
     renderPrintReport();
     await new Promise(r => setTimeout(r, 100));
 
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+    // overflow-x-auto 클립 우회: clone을 body에 절대위치로 붙여 캡처
+    const clone = container.cloneNode(true);
+    clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;';
+    document.body.appendChild(clone);
+    await new Promise(r => setTimeout(r, 80));
+    const fullW = clone.scrollWidth;
+    const fullH = clone.scrollHeight;
+    const canvas = await html2canvas(clone, {
+      scale: 2, backgroundColor: '#ffffff', useCORS: true,
+      width: fullW, height: fullH, windowWidth: fullW, scrollX: 0, scrollY: 0,
+    });
+    document.body.removeChild(clone);
     const imgData = canvas.toDataURL('image/png');
     const imgW = canvas.width;
     const imgH = canvas.height;
