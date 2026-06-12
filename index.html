@@ -1657,6 +1657,10 @@ async function exportAllHospitalPDFs() {
       page++;
     }
 
+    const fileName = `BELL-001-S-KR-003_사용현황_${hosp}_${ts}.pdf`;
+    zip.file(fileName, doc.output('arraybuffer'));
+  }
+
   sel.value = origHospVal;
   renderPrintReport();
 
