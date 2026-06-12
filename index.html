@@ -575,7 +575,10 @@ function parseCsv(csvText) {
       if (start_dt && endDateStr) {
         const parsedEnd = new Date(endDateStr);
         if (!isNaN(parsedEnd)) {
-          end_dt = parsedEnd;
+          // 정오 경계 기준: 종료일자의 시간에 관계없이 그 날짜 11:59:59로 정규화
+          // (23:59:59으로 들어온 경우 noon boundary에서 하루 더 카운트되는 것 방지)
+          end_dt = new Date(parsedEnd);
+          end_dt.setHours(11, 59, 59, 999);
           endRaw = `${end_dt.getFullYear()}-${String(end_dt.getMonth()+1).padStart(2,'0')}-${String(end_dt.getDate()).padStart(2,'0')}`;
         }
       }
