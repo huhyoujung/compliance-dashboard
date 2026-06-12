@@ -1476,6 +1476,50 @@ function renderPrintReport() {
   document.getElementById('print-report-content').innerHTML = html;
 }
 
+// html2canvas는 CSS 클래스 스타일을 누락하는 경우가 있어 인라인 스타일로 강제 적용
+function applyInlineHmStyles(el) {
+  el.querySelectorAll('td.hm').forEach(td => {
+    const c = td.classList;
+    let bg = '', color = '', border = '1px solid #d4d4d4';
+    if (c.contains('do-after'))      { bg = '#d4d4d4'; color = '#d4d4d4'; }
+    else if (c.contains('do-used')) { bg = '#a3a3a3'; color = '#a3a3a3'; border = ''; }
+    else if (c.contains('do-unused')){ bg = '#fff'; }
+    else if (c.contains('used'))    { bg = '#171717'; color = '#171717'; border = ''; }
+    else if (c.contains('unused'))  { bg = '#fff'; }
+    else if (c.contains('future'))  { bg = '#e5e5e5'; color = '#e5e5e5'; }
+    if (bg)     td.style.backgroundColor = bg;
+    if (color)  td.style.color           = color;
+    if (border) td.style.border          = border;
+    td.style.padding = '0';
+    td.style.width   = '20px';
+    td.style.minWidth = '20px';
+    td.style.height  = '22px';
+    td.style.textAlign = 'center';
+    td.style.fontSize = '10px';
+    td.style.fontWeight = '700';
+    td.style.lineHeight = '22px';
+  });
+  el.querySelectorAll('.print-table thead th').forEach(th => {
+    th.style.backgroundColor = '#f5f5f5';
+    th.style.border = '1px solid #d4d4d4';
+    th.style.padding = '6px 8px';
+    th.style.fontSize = '10px';
+    th.style.fontWeight = '600';
+    th.style.textAlign = 'center';
+    th.style.whiteSpace = 'nowrap';
+    th.style.color = '#525252';
+  });
+  el.querySelectorAll('.print-table td').forEach(td => {
+    if (!td.classList.contains('hm')) {
+      td.style.border = '1px solid #e5e5e5';
+      td.style.padding = '4px 6px';
+      td.style.verticalAlign = 'middle';
+      td.style.whiteSpace = 'nowrap';
+      td.style.fontSize = '11px';
+    }
+  });
+}
+
 async function exportPrintPDF() {
   const btn = document.querySelector('#pdf-dropdown-wrapper > button');
   const origHTML = btn.innerHTML;
@@ -1487,9 +1531,9 @@ async function exportPrintPDF() {
     const hospVal = document.getElementById('print-hospital-filter').value;
     const hospName = hospVal === 'all' ? '전체기관' : hospVal;
     const container = document.getElementById('print-report-content');
-    // CSS(#tab-print .print-table) 유지: #tab-print 안에 clone 삽입
     const tabPrint = document.getElementById('tab-print');
     const clone = container.cloneNode(true);
+    applyInlineHmStyles(clone);
     clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
     tabPrint.appendChild(clone);
     await new Promise(r => setTimeout(r, 80));
@@ -1569,9 +1613,9 @@ async function exportAllHospitalPDFs() {
     renderPrintReport();
     await new Promise(r => setTimeout(r, 100));
 
-    // CSS(#tab-print .print-table) 유지: #tab-print 안에 clone 삽입
     const tabPrint = document.getElementById('tab-print');
     const clone = container.cloneNode(true);
+    applyInlineHmStyles(clone);
     clone.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;background:#fff;overflow:visible;width:auto;max-width:none;max-height:none;padding:16px;';
     tabPrint.appendChild(clone);
     await new Promise(r => setTimeout(r, 80));
