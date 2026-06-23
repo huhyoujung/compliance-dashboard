@@ -1,10 +1,16 @@
 name: Daily Slack Report
 
 on:
-  schedule:
-    # 매일 KST 12:10 = UTC 03:10
-    - cron: "10 3 * * *"
+  # 외부 스케줄러(cron-job.org 등)가 매일 KST 12:10에 repository_dispatch로 깨움 → 지연 거의 없이 정시 실행
+  # POST https://api.github.com/repos/huhyoujung/compliance-dashboard/dispatches
+  #   body: { "event_type": "daily-report" }
+  repository_dispatch:
+    types: [daily-report]
   workflow_dispatch: # 수동 실행도 가능
+  # 참고: GitHub Actions의 schedule(cron)은 best-effort라 4~6h 지연되어 외부 트리거로 대체함.
+  # 외부 스케줄러 장애 대비 백업이 필요하면 아래 주석을 해제 (단, 중복 발송 주의 — 외부 트리거가 정상이면 하루 2회 발송됨)
+  # schedule:
+  #   - cron: "10 9 * * *"  # 18:10 KST (외부 트리거가 실패했을 때만 늦게라도 발송되는 안전망)
 
 jobs:
   screenshot-and-notify:
